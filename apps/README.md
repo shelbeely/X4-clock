@@ -162,5 +162,89 @@ shown at boot.
 
 ## Example Apps
 
-- **`clock.js`** — wall clock (time-since-boot, partial refresh every minute,
-  battery on confirm button, sleep on power button)
+- **`clock.js`** — standalone wall clock app (time-since-boot, partial refresh
+  every minute, battery on confirm button, sleep on power button)
+
+---
+
+## Clock Face Developer Guide
+
+The firmware includes a **built-in clock application** that loads swappable
+faces.  A face is a small `.js` file placed at `/faces/<name>.js` on the SD
+card.
+
+### How faces work
+
+- The clock app calls `draw()` on the active face **every second**.
+- `draw()` should check whether a visible change has occurred (e.g. the minute
+  changed) and only call `display.partialRefresh()` when it redraws — partial
+  refreshes take ~420 ms so calling one every second is fine, but calling one
+  every loop when nothing changed wastes battery.
+- The face **must not** call `input.onButton()`.  All button handling is managed
+  by the clock app.
+
+### Minimal face template
+
+```js
+var _lastMinute = -1;
+
+function setup() {       // called once after load
+  display.clear();
+  display.refresh();
+}
+
+function draw() {        // called every second by the clock app
+  var ms       = system.millis();
+  var totalSec = Math.floor(ms / 1000);
+  var h        = Math.floor(totalSec / 3600) % 24;
+  var m        = Math.floor(totalSec / 60)   % 60;
+
+  if (m === _lastMinute) return;   // nothing changed — skip
+  _lastMinute = m;
+
+  display.clear();
+  display.print(200, 240, pad2(h) + ":" + pad2(m), 4);
+  display.partialRefresh();
+  gc();
+}
+
+function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+```
+
+Save as `/faces/myface.js` on the SD card.  The clock app will detect it
+automatically on the next boot.
+
+### Face API reference
+
+| Available API | Notes |
+|---------------|-------|
+| `display.*`   | All display functions — use `display.partialRefresh()` for updates |
+| `system.millis()` | Milliseconds since boot — derive H/M/S from this |
+| `system.battery()` | Battery 0–100 % |
+| `system.log(msg)` | Debug output to USB Serial |
+| `gc()` | Trigger garbage collector — call after allocating temporary strings |
+
+### Lifecycle
+
+```
+/faces/ scan at boot
+        ↓
+setup() — once
+        ↓
+draw()  — every second (clock app calls this)
+        ↓
+context destroyed when face is switched or clock app exits
+```
+
+### Switching faces on device
+
+While the clock is running:
+- **LEFT** — switch to the previous face
+- **RIGHT** — switch to the next face
+- **BACK** — exit to the app picker
+
+### Example faces
+
+- **`faces/digital.js`** — large HH:MM, day counter, battery (same as built-in)
+- **`faces/minimal.js`** — large HH:MM only, no decoration
+

@@ -9,7 +9,7 @@
 #include "drivers/display.h"
 #include "drivers/buttons.h"
 #include "drivers/sdcard.h"
-#include "builtin/clock_fallback.h"
+#include "builtin/clock_app.h"
 
 #include <Arduino.h>
 
@@ -56,35 +56,31 @@ void app_loader_init() {
 void app_loader_run() {
     show_splash();
 
-    if (!sdcard_available()) {
-        // No SD card — go straight to built-in fallback
-        clock_fallback_run();
-        return;
+    // Slot 0 is always the built-in clock app.  An empty path signals
+    // launch_app() to call clock_app_run() instead of loading a file.
+    strncpy(s_app_names[0], "Clock (built-in)", 255);
+    s_app_names[0][255]   = '\0';
+    s_app_paths[0][0]     = '\0';
+    s_app_is_bytecode[0]  = false;
+    s_app_count           = 1;
+
+    if (sdcard_available()) {
+        scan_apps();   // appends SD apps starting at s_app_names[s_app_count]
     }
 
-    scan_apps();
-
-    if (s_app_count == 0) {
-        clock_fallback_run();
-        return;
-    }
-
+    // Default to the built-in clock (idx 0) unless default.txt says otherwise
     int idx = find_default_app();
-    if (s_app_count > 1 && idx < 0) {
-        show_picker();
-        idx = s_app_cursor;
-    } else if (idx < 0) {
-        idx = 0;
-    }
+    if (idx < 0) idx = 0;
 
     // Keep launching apps until a fatal error
     for (;;) {
         launch_app(idx);
-        // If launch_app returns, show picker again (unless count == 1)
+        // If launch_app returns and there are multiple choices, show the picker
         if (s_app_count > 1) {
             show_picker();
             idx = s_app_cursor;
         }
+        // With only the built-in clock available the loop just relaunches it
     }
 }
 
@@ -126,8 +122,8 @@ static void scan_apps() {
     static bool  is_dirs[MAX_APPS];
     static uint32_t szs[MAX_APPS];
 
-    int n = sd_list_dir(APPS_DIR, names, is_dirs, szs, MAX_APPS);
-    s_app_count = 0;
+    int n = sd_list_dir(APPS_DIR, names, is_dirs, szs, MAX_APPS - s_app_count);
+    // s_app_count is NOT reset here — we append to existing entries
 
     for (int i = 0; i < n && s_app_count < MAX_APPS; i++) {
         if (is_dirs[i]) continue;
@@ -264,6 +260,12 @@ static bool load_file_to_buf(const char *path, uint8_t **out_buf, size_t *out_le
 // ---------------------------------------------------------------------------
 
 static void launch_app(int idx) {
+    // Empty path → built-in clock app (no file to load)
+    if (s_app_paths[idx][0] == '\0') {
+        clock_app_run();
+        return;
+    }
+
     const char *path = s_app_paths[idx];
     const char *name = s_app_names[idx];
 
