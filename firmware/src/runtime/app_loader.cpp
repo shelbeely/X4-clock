@@ -215,10 +215,10 @@ static void show_picker() {
         ButtonEvent ev = buttons_dequeue();
         if (ev == BTN_NONE) { delay(20); continue; }
 
-        if (ev == BTN_RIGHT || ev == BTN_DOWN) {
+        if (ev == BTN_RIGHT) {
             if (s_app_cursor < s_app_count - 1) s_app_cursor++;
             draw_picker();
-        } else if (ev == BTN_LEFT || ev == BTN_UP) {
+        } else if (ev == BTN_LEFT) {
             if (s_app_cursor > 0) s_app_cursor--;
             draw_picker();
         } else if (ev == BTN_CONFIRM) {
@@ -288,17 +288,20 @@ static void launch_app(int idx) {
     bool ok;
     if (s_app_is_bytecode[idx]) {
         // .app — mquickjs 32-bit bytecode (compiled with: mqjs -m32 -o app.app app.js)
+        // IMPORTANT: buf must remain valid until the context is destroyed because
+        // JS_LoadBytecode stores a direct pointer into the buffer.
         ok = js_engine_run_bytecode(ctx, buf, len);
+        // buf intentionally NOT freed here — see free() after js_engine_destroy_context
     } else {
-        // .js — JavaScript source
+        // .js — JavaScript source; buf is fully consumed by JS_Eval and can be freed now
         ok = js_engine_run_source(ctx, (const char *)buf, len, name);
+        free(buf);
+        buf = nullptr;
     }
-
-    // Source / bytecode buffer no longer needed after eval
-    free(buf);
 
     if (!ok) {
         js_engine_destroy_context(ctx);
+        if (buf) { free(buf); }
         show_error("App failed to load");
         return;
     }
@@ -343,4 +346,7 @@ static void launch_app(int idx) {
     }
 
     js_engine_destroy_context(ctx);
+    // Free bytecode buffer now that the context (and all references into buf) is gone.
+    // For source apps buf was already freed to nullptr after JS_Eval.
+    if (buf) { free(buf); }
 }
