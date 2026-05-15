@@ -45,8 +45,10 @@ JSValue js_x4_input_onButton(JSContext *ctx, JSValue *this_val,
 // ---------------------------------------------------------------------------
 
 void js_input_reset() {
-    // The old JSContext is being destroyed — the JSGCRef is no longer valid
+    // The old JSContext is being destroyed — the JSGCRef is no longer valid.
+    // Zero both the pointer and the ref so any stale data is cleared.
     s_cb_ptr = nullptr;
+    memset(&s_cb_ref, 0, sizeof(s_cb_ref));
 }
 
 void js_input_dispatch_events(JSContext *ctx) {

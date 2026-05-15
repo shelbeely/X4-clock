@@ -27,7 +27,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FIRMWARE_DIR="$(dirname "$SCRIPT_DIR")"
 LIB_SRC="$FIRMWARE_DIR/lib/mquickjs/src"
-WORK="$(mktemp -d /tmp/mquickjs_XXXXXX)"
+WORK="$(mktemp -d)"   # uses the system's default temp directory (TMPDIR)
 
 cleanup() { rm -rf "$WORK"; }
 trap cleanup EXIT

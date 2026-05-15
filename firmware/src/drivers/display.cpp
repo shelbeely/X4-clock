@@ -140,6 +140,8 @@ void display_draw_bitmap(int16_t dx, int16_t dy, const char *sd_path) {
 
     // BMP rows are padded to 4-byte boundaries
     uint32_t row_bytes = ((bmp_w + 31) / 32) * 4;
+    // For an 800 px wide 1-bit image: row_bytes = ((800+31)/32)*4 = 100 bytes.
+    // Buffer is sized generously (128) to handle any width up to 1024 px.
 
     sd_seek(fh, px_offset);
 

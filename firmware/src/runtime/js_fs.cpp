@@ -122,10 +122,11 @@ JSValue js_x4_fs_list(JSContext *ctx, JSValue *this_val,
     if (!path) return JS_EXCEPTION;
 
     // Read directory listing into C arrays first, then build JS objects.
-    // Max 32 entries to bound stack usage.
-    static const int MAX_ENTRIES = 32;
-    static char   names[MAX_ENTRIES][256];
-    static bool   is_dirs[MAX_ENTRIES];
+    // Static arrays avoid overflowing the FreeRTOS task stack (typically 4-8 KB).
+    // Limited to 16 entries (~4 KB static footprint) to keep RAM usage bounded.
+    static const int MAX_ENTRIES = 16;
+    static char    names[MAX_ENTRIES][256];
+    static bool    is_dirs[MAX_ENTRIES];
     static uint32_t szs[MAX_ENTRIES];
 
     int count = sd_list_dir(path, names, is_dirs, szs, MAX_ENTRIES);

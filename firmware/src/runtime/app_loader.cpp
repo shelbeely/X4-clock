@@ -245,7 +245,9 @@ static bool load_file_to_buf(const char *path, uint8_t **out_buf, size_t *out_le
     size_t total = 0;
     while (total < (size_t)sz) {
         int n = sd_read(fh, (char *)(buf + total),
-                        SD_CHUNK_SIZE < (sz - total) ? SD_CHUNK_SIZE : (sz - total));
+                        (size_t)(SD_CHUNK_SIZE) < (size_t)(sz - total)
+                            ? (size_t)(SD_CHUNK_SIZE)
+                            : (size_t)(sz - total));
         if (n <= 0) break;
         total += n;
     }
@@ -307,7 +309,11 @@ static void launch_app(int idx) {
     // Main loop
     uint32_t last_loop_start = millis();
     for (;;) {
-        // Dispatch button events to the registered input.onButton() callback
+        // Dispatch button events to the registered input.onButton() callback.
+        // Power button is dispatched here like any other button — if the JS
+        // callback calls system.sleep(), esp_deep_sleep_start() is invoked
+        // and this loop never resumes.  If no callback is registered the
+        // event is consumed and we fall through to the legacy power check.
         js_input_dispatch_events(ctx);
 
         // Call loop()
@@ -323,10 +329,10 @@ static void launch_app(int idx) {
             break;
         }
 
-        // Check for power-button long-press (BTN_POWER dispatched to JS)
-        // If the JS callback requested sleep, js_system_sleep will have
-        // called esp_deep_sleep_start() and we never reach here.
-        // For power button without a registered JS handler, exit to launcher.
+        // Check for power-button long-press when no JS callback consumed it.
+        // If the JS app registered input.onButton() and called system.sleep(),
+        // esp_deep_sleep_start() already fired above.  This is a fallback for
+        // apps that don't handle the power button in JS.
         if (buttons_available()) {
             ButtonEvent ev = buttons_dequeue();
             if (ev == BTN_POWER) break;  // exit to launcher / fallback
