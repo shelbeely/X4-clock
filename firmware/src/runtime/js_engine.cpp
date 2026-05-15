@@ -1,0 +1,181 @@
+/*
+ * js_engine.cpp — MicroQuickJS context lifecycle
+ *
+ * Provides the static 64 KB memory buffer, context creation/destruction,
+ * source/bytecode execution, and the stdlib shims that mquickjs expects
+ * (js_gc, js_print, js_date_now, js_performance_now).
+ */
+
+#include "js_engine.h"
+#include "js_input.h"
+#include "js_system.h"
+#include <Arduino.h>
+
+// The generated stdlib header (produced by fetch_mquickjs.sh) — must be
+// included in exactly ONE translation unit so the function table is defined.
+// The extern "C" wrapper prevents C++ name-mangling of the table symbols.
+extern "C" {
+#include "x4_stdlib.h"
+}
+
+// ---------------------------------------------------------------------------
+// Static 64 KB JS heap — single buffer reused across app runs
+// ---------------------------------------------------------------------------
+static uint8_t s_js_mem[JS_MEM_SIZE];
+
+// ---------------------------------------------------------------------------
+// Stdlib shims required by the x4_stdlib.h function table.
+//
+// These functions are referenced BY NAME in x4_stdlib.c (as strings in the
+// JSPropDef macros) and appear as extern declarations in x4_stdlib.h.
+// They must therefore have C linkage and exactly match the JSCFunction type.
+// ---------------------------------------------------------------------------
+extern "C" {
+
+// gc() — trigger the compacting garbage collector
+JSValue js_gc(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv) {
+    JS_GC(ctx);
+    return JS_UNDEFINED;
+}
+
+// console.log / print() — route to Arduino Serial
+JSValue js_print(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv) {
+    for (int i = 0; i < argc; i++) {
+        if (i != 0) Serial.print(' ');
+        if (JS_IsString(ctx, argv[i])) {
+            JSCStringBuf buf;
+            const char *str = JS_ToCString(ctx, argv[i], &buf);
+            if (str) Serial.print(str);
+        } else {
+            JS_PrintValue(ctx, argv[i]);
+        }
+    }
+    Serial.println();
+    return JS_UNDEFINED;
+}
+
+// Date.now() — milliseconds since boot (no RTC)
+JSValue js_date_now(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv) {
+    return JS_NewInt64(ctx, (int64_t)millis());
+}
+
+// performance.now() — same as Date.now() on this platform
+JSValue js_performance_now(JSContext *ctx, JSValue *this_val, int argc,
+                           JSValue *argv) {
+    return JS_NewInt64(ctx, (int64_t)millis());
+}
+
+// Date constructor stub — mquickjs needs this even if full Date isn't used
+JSValue js_date_constructor(JSContext *ctx, JSValue *this_val, int argc,
+                            JSValue *argv) {
+    return JS_NewInt64(ctx, (int64_t)millis());
+}
+
+} // extern "C"
+
+// ---------------------------------------------------------------------------
+// mquickjs log function — routes JS_PrintValue / JS_DumpMemory to Serial
+// ---------------------------------------------------------------------------
+static void js_log_func(void *opaque, const void *buf, size_t len) {
+    Serial.write(reinterpret_cast<const char *>(buf), len);
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+void js_engine_init() {
+    // Nothing global to initialise — context is created per app run
+}
+
+JSContext *js_engine_new_context() {
+    JSContext *ctx = JS_NewContext(s_js_mem, sizeof(s_js_mem), &js_stdlib);
+    if (!ctx) {
+        Serial.println("[JS] JS_NewContext failed — out of memory?");
+        return nullptr;
+    }
+
+    JS_SetLogFunc(ctx, js_log_func);
+    js_input_reset();
+
+    Serial.printf("[JS] context ready (%u B heap)\n", (unsigned)sizeof(s_js_mem));
+    return ctx;
+}
+
+bool js_engine_run_source(JSContext *ctx,
+                          const char *src, size_t len,
+                          const char *filename) {
+    JSValue val = JS_Eval(ctx, src, len, filename, 0);
+    if (JS_IsException(val)) {
+        js_engine_dump_exception(ctx);
+        return false;
+    }
+    return true;
+}
+
+bool js_engine_run_bytecode(JSContext *ctx, uint8_t *buf, size_t len) {
+    if (!JS_IsBytecode(buf, len)) {
+        Serial.println("[JS] run_bytecode: not valid mquickjs bytecode");
+        return false;
+    }
+    if (JS_RelocateBytecode(ctx, buf, (uint32_t)len) != 0) {
+        Serial.println("[JS] run_bytecode: relocation failed");
+        return false;
+    }
+    JSValue fn = JS_LoadBytecode(ctx, buf);
+    if (JS_IsException(fn)) {
+        js_engine_dump_exception(ctx);
+        return false;
+    }
+    JSValue val = JS_Run(ctx, fn);
+    if (JS_IsException(val)) {
+        js_engine_dump_exception(ctx);
+        return false;
+    }
+    return true;
+}
+
+void js_engine_destroy_context(JSContext *ctx) {
+    if (!ctx) return;
+    js_input_reset();
+    JS_FreeContext(ctx);
+}
+
+bool js_engine_call_func(JSContext *ctx, const char *name) {
+    JSGCRef global_ref, fn_ref;
+    JSValue *global_ptr = JS_PushGCRef(ctx, &global_ref);
+    JSValue *fn_ptr     = JS_PushGCRef(ctx, &fn_ref);
+
+    *global_ptr = JS_GetGlobalObject(ctx);
+    *fn_ptr     = JS_GetPropertyStr(ctx, *global_ptr, name);
+
+    bool ok = true;
+    if (JS_IsFunction(ctx, *fn_ptr)) {
+        // Stack slots: func + this
+        if (!JS_StackCheck(ctx, 2)) {
+            JS_PushArg(ctx, *fn_ptr);
+            JS_PushArg(ctx, *global_ptr);
+            JSValue ret = JS_Call(ctx, 0);
+            if (JS_IsException(ret)) {
+                js_engine_dump_exception(ctx);
+                ok = false;
+            }
+        } else {
+            Serial.println("[JS] call_func: stack overflow");
+            ok = false;
+        }
+    } else {
+        ok = false;  // function not found — not an error
+    }
+
+    JS_PopGCRef(ctx, &fn_ref);
+    JS_PopGCRef(ctx, &global_ref);
+    return ok;
+}
+
+void js_engine_dump_exception(JSContext *ctx) {
+    JSValue exc = JS_GetException(ctx);
+    Serial.print("[JS] Exception: ");
+    JS_PrintValueF(ctx, exc, JS_DUMP_LONG);
+    Serial.println();
+}

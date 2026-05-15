@@ -1,0 +1,23 @@
+{
+    "name": "mquickjs",
+    "version": "2025.1.0",
+    "description": "MicroQuickJS — minimal JavaScript engine by Fabrice Bellard, adapted for ESP32-C3",
+    "keywords": ["javascript", "quickjs", "embedded", "esp32"],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/bellard/mquickjs"
+    },
+    "frameworks": ["arduino"],
+    "platforms": ["espressif32"],
+    "build": {
+        "srcFilter": ["+<src/*.c>"],
+        "flags": [
+            "-x c",
+            "-D_GNU_SOURCE",
+            "-DCONFIG_SMALL=1",
+            "-Wno-unused-parameter",
+            "-Wno-missing-field-initializers"
+        ],
+        "includeDir": "src"
+    }
+}
