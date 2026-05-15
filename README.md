@@ -11,13 +11,15 @@ Drop a JavaScript app on the SD card and it runs — no recompiling the firmware
 │   ├── clock.js              ← standalone wall-clock app
 │   ├── hello.js              ← minimal Hello World starter
 │   ├── stopwatch.js          ← start/stop/reset stopwatch
+│   ├── countdown.js          ← countdown timer with persistent settings
 │   ├── battery_monitor.js    ← live battery gauge with bar graph
 │   ├── faces/
 │   │   ├── digital.js        ← JS mirror of the built-in digital face
 │   │   ├── minimal.js        ← time only, no decoration
-│   │   ├── bold.js           ← HH:MM:SS (redraws every second)
+│   │   ├── seconds.js        ← HH:MM:SS (redraws every second)
 │   │   ├── status.js         ← info-dense with border and data strip
-│   │   └── roman.js          ← Roman numeral clock
+│   │   ├── roman.js          ← Roman numeral clock
+│   │   └── world_clock.js    ← two-timezone side-by-side display
 │   └── README.md             ← complete JS API + face developer guide
 ├── firmware/
 │   ├── platformio.ini
@@ -57,6 +59,7 @@ bash scripts/fetch_mquickjs.sh
 ### 2. Build and flash
 
 ```bash
+cd firmware/
 pio run -t upload
 ```
 
@@ -71,14 +74,22 @@ mkdir -p <SD>/faces
 cp apps/clock.js            <SD>/apps/clock.js
 cp apps/hello.js            <SD>/apps/hello.js
 cp apps/stopwatch.js        <SD>/apps/stopwatch.js
+cp apps/countdown.js        <SD>/apps/countdown.js
 cp apps/battery_monitor.js  <SD>/apps/battery_monitor.js
 
 # Copy the clock faces
-cp apps/faces/digital.js  <SD>/faces/digital.js
-cp apps/faces/minimal.js  <SD>/faces/minimal.js
-cp apps/faces/bold.js     <SD>/faces/bold.js
-cp apps/faces/status.js   <SD>/faces/status.js
-cp apps/faces/roman.js    <SD>/faces/roman.js
+cp apps/faces/digital.js     <SD>/faces/digital.js
+cp apps/faces/minimal.js     <SD>/faces/minimal.js
+cp apps/faces/seconds.js     <SD>/faces/seconds.js
+cp apps/faces/status.js      <SD>/faces/status.js
+cp apps/faces/roman.js       <SD>/faces/roman.js
+cp apps/faces/world_clock.js <SD>/faces/world_clock.js
+```
+
+Or use the helper script (run from the repository root):
+
+```bash
+bash scripts/deploy_sd.sh <SD>
 ```
 
 ### 4. Write your own app
@@ -137,9 +148,10 @@ The firmware ships five ready-made faces:
 |------|-------------|
 | `digital.js` | Large HH:MM + day counter + battery |
 | `minimal.js` | Time only — large HH:MM, no extras |
-| `bold.js` | HH:MM:SS — redraws every second |
+| `seconds.js` | HH:MM:SS — redraws every second |
 | `status.js` | Info-dense: border + time + day + battery strip |
 | `roman.js` | Roman numeral time (e.g. `XI : XLV`) |
+| `world_clock.js` | Two timezones side by side (configurable UTC offset) |
 
 See [apps/README.md](apps/README.md) for the complete face developer guide.
 
@@ -152,6 +164,7 @@ See [apps/README.md](apps/README.md) for the complete face developer guide.
 | `clock.js` | Standalone wall clock (separate from the built-in clock) |
 | `hello.js` | Minimal Hello World — good starting point |
 | `stopwatch.js` | Start/stop/reset stopwatch |
+| `countdown.js` | Countdown timer with adjustable duration, pause, and persistent settings |
 | `battery_monitor.js` | Live battery percentage with bar graph |
 
 ---

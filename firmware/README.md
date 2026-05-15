@@ -72,6 +72,10 @@ SD:/
 └── faces/
     ├── digital.js         ← built-in digital face (JS version)
     ├── minimal.js         ← time-only minimal face
+    ├── seconds.js         ← HH:MM:SS seconds face
+    ├── status.js          ← info-dense border + day/battery strip
+    ├── roman.js           ← Roman numeral clock
+    ├── world_clock.js     ← two-timezone side-by-side display
     └── <your faces>
 ```
 

@@ -10,7 +10,7 @@
 //
 // Redraws once per minute to conserve e-ink partial refresh cycles.
 
-var _lastMinute = -1;
+var _lastTotalMin = -1;
 
 function setup() {
   display.clear();
@@ -18,16 +18,17 @@ function setup() {
 }
 
 function draw() {
-  var ms       = system.millis();
-  var totalSec = Math.floor(ms / 1000);
-  var h        = Math.floor(totalSec / 3600) % 12;
-  var m        = Math.floor(totalSec / 60)   % 60;
+  var ms        = system.millis();
+  var totalSec  = Math.floor(ms / 1000);
+  var totalMin  = Math.floor(totalSec / 60);
+  var h         = Math.floor(totalSec / 3600) % 12;
+  var m         = totalMin % 60;
 
   // 12-hour display: 0 → XII
   if (h === 0) h = 12;
 
-  if (m === _lastMinute) return;
-  _lastMinute = m;
+  if (totalMin === _lastTotalMin) return;
+  _lastTotalMin = totalMin;
 
   var timeStr = toRoman(h) + " : " + toRoman(m);
 

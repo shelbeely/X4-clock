@@ -125,7 +125,76 @@ temporary strings or processing a file chunk.
 
 ---
 
-## Compiling to Bytecode (`.app`)
+## Debugging
+
+Use `system.log(msg)` to print messages to the USB serial console:
+
+```js
+system.log("value: " + myVar);
+```
+
+Start the monitor in a second terminal:
+
+```bash
+cd firmware/
+pio device monitor
+```
+
+### What serial output looks like
+
+On a clean boot you will see the firmware banner followed by log lines from
+your app:
+
+```
+X4 boot
+Loading app: /apps/mygame.js
+value: 42
+```
+
+Runtime errors (syntax errors, uncaught exceptions) are printed as:
+
+```
+JS error: ReferenceError: 'foo' is not defined
+```
+
+If nothing appears, check the baud rate — the default is **115200**.
+
+---
+
+## Display Refresh Strategy
+
+The SSD1677 e-ink display has two refresh modes with very different costs:
+
+| Method | Time | Use when |
+|--------|------|----------|
+| `display.refresh()` | ~3.5 s | App starts — clears ghosting from previous content |
+| `display.partialRefresh()` | ~0.42 s | Any subsequent update in `loop()` or `draw()` |
+
+**Best practice**
+
+1. Call `display.clear()` + `display.refresh()` **once in `setup()`** to start
+   with a clean screen.
+2. Call `display.clear()` + `display.partialRefresh()` for every subsequent
+   redraw.
+
+Calling `display.refresh()` inside `loop()` will freeze the device for 3.5 s
+on every iteration and wear out the display faster.
+
+---
+
+## Common Mistakes
+
+| Mistake | What happens | Fix |
+|---------|-------------|-----|
+| Calling `display.refresh()` inside `loop()` | Device freezes ~3.5 s every tick | Use `display.partialRefresh()` for updates; call `display.refresh()` only in `setup()` |
+| Registering `input.onButton()` more than once | Second call silently replaces the first handler | Call `input.onButton()` exactly once, at top level |
+| Not calling `gc()` after string operations | JS heap fills up and the app crashes | Call `gc()` after building large strings or reading file chunks |
+| Allocating a string larger than ~64 KB | Immediate out-of-memory crash | Keep individual strings short; process data in chunks |
+| Calling `draw()` from `loop()` in an app | Undefined — `draw()` is a face API, not an app API | Apps use `loop()`; faces use `draw()` |
+
+---
+
+
 
 Pre-compiling your script to mquickjs bytecode gives faster startup and
 slightly lower RAM usage at load time.
@@ -167,6 +236,7 @@ shown at boot.
 | `clock.js` | Standalone wall clock — large HH:MM, day counter, battery on confirm, sleep on power |
 | `hello.js` | Minimal Hello World — static greeting, battery on confirm, sleep on power |
 | `stopwatch.js` | Start/stop/reset stopwatch with live per-second updates |
+| `countdown.js` | Countdown timer — set duration with LEFT/RIGHT, start/pause with CONFIRM, saves last duration |
 | `battery_monitor.js` | Live battery gauge — large percentage number and a proportional fill bar |
 
 ---
@@ -190,7 +260,7 @@ card.
 ### Minimal face template
 
 ```js
-var _lastMinute = -1;
+var _lastTotalMin = -1;
 
 function setup() {       // called once after load
   display.clear();
@@ -200,11 +270,12 @@ function setup() {       // called once after load
 function draw() {        // called every second by the clock app
   var ms       = system.millis();
   var totalSec = Math.floor(ms / 1000);
+  var totalMin = Math.floor(totalSec / 60);
   var h        = Math.floor(totalSec / 3600) % 24;
-  var m        = Math.floor(totalSec / 60)   % 60;
+  var m        = totalMin % 60;
 
-  if (m === _lastMinute) return;   // nothing changed — skip
-  _lastMinute = m;
+  if (totalMin === _lastTotalMin) return;   // nothing changed — skip
+  _lastTotalMin = totalMin;
 
   display.clear();
   display.print(200, 240, pad2(h) + ":" + pad2(m), 4);
@@ -253,7 +324,8 @@ While the clock is running:
 |------|-------------|
 | `faces/digital.js` | Large HH:MM + day counter + battery (JS mirror of built-in) |
 | `faces/minimal.js` | Large HH:MM only, no decoration |
-| `faces/bold.js` | HH:MM:SS — redraws every second |
+| `faces/seconds.js` | HH:MM:SS — redraws every second |
 | `faces/status.js` | Info-dense: double border + time + day/battery data strip |
 | `faces/roman.js` | Roman numeral clock (e.g. `XI : XLV`) |
+| `faces/world_clock.js` | Two timezones side by side (configure `UTC_OFFSET_HOURS` in file) |
 

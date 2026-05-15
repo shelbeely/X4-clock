@@ -1,6 +1,6 @@
-// bold.js — Seconds clock face for Xteink X4
+// seconds.js — Seconds clock face for Xteink X4
 //
-// Place at /faces/bold.js on the SD card.
+// Place at /faces/seconds.js on the SD card.
 //
 // Redraws every second to display HH:MM:SS in a large font.
 // Useful when seconds precision matters.  The per-second partial refresh

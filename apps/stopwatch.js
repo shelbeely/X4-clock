@@ -16,12 +16,6 @@ var _elapsed = 0;          // accumulated milliseconds before current run
 var _lastDrawnSec = -1;    // last second value drawn on screen
 
 function setup() {
-  display.clear();
-  display.print(20, 80,  "Stopwatch",                        3);
-  display.print(20, 390, "Confirm: start / stop",            1);
-  display.print(20, 420, "Back: reset   Power: sleep",       1);
-  display.refresh();
-
   drawTime(0);
 }
 

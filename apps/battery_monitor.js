@@ -42,14 +42,14 @@ function redraw(pct) {
   var pctStr = pct + "%";
   display.print(310, 220, pctStr, 4);
 
-  // Bar outline
-  display.drawRect(BAR_X, BAR_Y, BAR_W, BAR_H, false);
-
   // Filled portion proportional to charge level
   var fillW = Math.floor(BAR_W * pct / 100);
   if (fillW > 0) {
     display.drawRect(BAR_X, BAR_Y, fillW, BAR_H, true);
   }
+
+  // Bar outline drawn last so it is always visible on top of the fill
+  display.drawRect(BAR_X, BAR_Y, BAR_W, BAR_H, false);
 
   // Footer
   display.print(20, 440, "Confirm: refresh   Power: sleep", 1);

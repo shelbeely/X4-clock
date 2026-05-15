@@ -46,8 +46,8 @@ function draw() {
   display.print(190, 360, "" + day,    2);
 
   // Battery percentage — right side of data strip
-  display.print(430, 360, "Battery",   2);
-  display.print(700, 360, bat + "%",   2);
+  display.print(420, 360, "Battery",   2);
+  display.print(620, 360, bat + "%",   2);
 
   display.partialRefresh();
   gc();
