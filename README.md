@@ -8,21 +8,30 @@ Drop a JavaScript app on the SD card and it runs — no recompiling the firmware
 ```
 .
 ├── apps/
-│   ├── clock.js        ← default wall-clock app (copy to SD card)
-│   └── README.md       ← complete JS API reference + app developer guide
+│   ├── clock.js              ← standalone wall-clock app
+│   ├── hello.js              ← minimal Hello World starter
+│   ├── stopwatch.js          ← start/stop/reset stopwatch
+│   ├── battery_monitor.js    ← live battery gauge with bar graph
+│   ├── faces/
+│   │   ├── digital.js        ← JS mirror of the built-in digital face
+│   │   ├── minimal.js        ← time only, no decoration
+│   │   ├── bold.js           ← HH:MM:SS (redraws every second)
+│   │   ├── status.js         ← info-dense with border and data strip
+│   │   └── roman.js          ← Roman numeral clock
+│   └── README.md             ← complete JS API + face developer guide
 ├── firmware/
 │   ├── platformio.ini
 │   ├── partitions.csv
-│   ├── lib/mquickjs/   ← MicroQuickJS engine (populated by setup script)
+│   ├── lib/mquickjs/         ← MicroQuickJS engine (populated by setup script)
 │   ├── scripts/
-│   │   ├── x4_stdlib.c          ← custom stdlib definition
-│   │   └── fetch_mquickjs.sh    ← one-time setup script
+│   │   ├── x4_stdlib.c       ← custom stdlib definition
+│   │   └── fetch_mquickjs.sh ← one-time setup script
 │   ├── src/
-│   │   ├── bsp/         ← GPIO / ADC pin definitions
-│   │   ├── drivers/     ← display, buttons, battery, SD card
-│   │   ├── runtime/     ← JS engine, bindings, app loader
-│   │   └── builtin/     ← C fallback clock (no SD card needed)
-│   └── README.md        ← build + flash instructions
+│   │   ├── bsp/              ← GPIO / ADC pin definitions
+│   │   ├── drivers/          ← display, buttons, battery, SD card
+│   │   ├── runtime/          ← JS engine, bindings, app loader
+│   │   └── builtin/          ← built-in clock app (no SD card needed)
+│   └── README.md             ← build + flash instructions
 └── README.md
 ```
 
@@ -54,8 +63,22 @@ pio run -t upload
 ### 3. Prepare the SD card
 
 ```bash
+# Create required directories
 mkdir -p <SD>/apps
-cp apps/clock.js <SD>/apps/clock.js
+mkdir -p <SD>/faces
+
+# Copy the example apps
+cp apps/clock.js            <SD>/apps/clock.js
+cp apps/hello.js            <SD>/apps/hello.js
+cp apps/stopwatch.js        <SD>/apps/stopwatch.js
+cp apps/battery_monitor.js  <SD>/apps/battery_monitor.js
+
+# Copy the clock faces
+cp apps/faces/digital.js  <SD>/faces/digital.js
+cp apps/faces/minimal.js  <SD>/faces/minimal.js
+cp apps/faces/bold.js     <SD>/faces/bold.js
+cp apps/faces/status.js   <SD>/faces/status.js
+cp apps/faces/roman.js    <SD>/faces/roman.js
 ```
 
 ### 4. Write your own app
@@ -82,6 +105,56 @@ input.onButton(function(btn) {
 ```
 
 See [apps/README.md](apps/README.md) for the full API reference.
+
+## Built-in Clock App
+
+The firmware ships with a **built-in clock application** that runs on boot even
+without an SD card.  It is always the first item in the app picker.
+
+While the clock is running:
+
+| Button | Action |
+|--------|--------|
+| LEFT | Previous face |
+| RIGHT | Next face |
+| CONFIRM | Show battery % overlay |
+| BACK | Return to app picker |
+| POWER | Enter deep sleep |
+
+### Clock Faces
+
+Faces are `.js` files placed at `/faces/<name>.js` on the SD card.
+A face exports two functions:
+
+```js
+function setup() { /* called once after the face loads */ }
+function draw()  { /* called every second — update the display here */ }
+```
+
+The firmware ships five ready-made faces:
+
+| Face | Description |
+|------|-------------|
+| `digital.js` | Large HH:MM + day counter + battery |
+| `minimal.js` | Time only — large HH:MM, no extras |
+| `bold.js` | HH:MM:SS — redraws every second |
+| `status.js` | Info-dense: border + time + day + battery strip |
+| `roman.js` | Roman numeral time (e.g. `XI : XLV`) |
+
+See [apps/README.md](apps/README.md) for the complete face developer guide.
+
+---
+
+## Example Apps
+
+| App | Description |
+|-----|-------------|
+| `clock.js` | Standalone wall clock (separate from the built-in clock) |
+| `hello.js` | Minimal Hello World — good starting point |
+| `stopwatch.js` | Start/stop/reset stopwatch |
+| `battery_monitor.js` | Live battery percentage with bar graph |
+
+---
 
 ## JavaScript API at a Glance
 

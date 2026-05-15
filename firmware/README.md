@@ -65,10 +65,14 @@ pio device monitor
 
 ```
 SD:/
-└── apps/
-    ├── clock.js        ← default clock app (copy from apps/)
-    ├── default.txt     ← optional: name of app to auto-launch
-    └── <your apps>
+├── apps/
+│   ├── clock.js           ← default clock app (copy from apps/)
+│   ├── default.txt        ← optional: name of app to auto-launch
+│   └── <your apps>
+└── faces/
+    ├── digital.js         ← built-in digital face (JS version)
+    ├── minimal.js         ← time-only minimal face
+    └── <your faces>
 ```
 
 Copy the example clock app:
@@ -123,7 +127,8 @@ firmware/
     │   ├── js_system.cpp/h  # JS: system.* bindings + gc()
     │   └── app_loader.cpp/h # SD scan, .js/.app loader, lifecycle
     ├── builtin/
-    │   └── clock_fallback.h # C fallback clock (no SD card)
+    │   ├── clock_app.h      # Built-in clock app public API
+    │   └── clock_app.cpp    # Built-in clock app + face loader
     └── main.cpp
 ```
 
@@ -137,6 +142,25 @@ firmware/
 | SdFat + file buffers | ~8 KB |
 | Arduino / FreeRTOS overhead | ~50 KB |
 | **Total** | **~186 KB** (within 380 KB) |
+
+## Clock Faces
+
+The built-in clock app loads swappable faces from `/faces/` on the SD card.
+A face is a `.js` file that exports:
+
+```js
+function setup() { /* initialise — called once after load */ }
+function draw()  { /* called every second by the clock app */ }
+```
+
+Place faces at `/faces/<name>.js`.  The clock app scans this directory at boot
+and makes all discovered faces available via the LEFT/RIGHT buttons.
+
+The built-in C++ face (`Digital`) is always slot 0 and works without an SD card.
+
+See [../apps/README.md](../apps/README.md) for the complete face developer guide.
+
+---
 
 ## Adding New JavaScript APIs
 

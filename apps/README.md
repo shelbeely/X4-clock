@@ -162,8 +162,12 @@ shown at boot.
 
 ## Example Apps
 
-- **`clock.js`** — standalone wall clock app (time-since-boot, partial refresh
-  every minute, battery on confirm button, sleep on power button)
+| App | Description |
+|-----|-------------|
+| `clock.js` | Standalone wall clock — large HH:MM, day counter, battery on confirm, sleep on power |
+| `hello.js` | Minimal Hello World — static greeting, battery on confirm, sleep on power |
+| `stopwatch.js` | Start/stop/reset stopwatch with live per-second updates |
+| `battery_monitor.js` | Live battery gauge — large percentage number and a proportional fill bar |
 
 ---
 
@@ -245,6 +249,11 @@ While the clock is running:
 
 ### Example faces
 
-- **`faces/digital.js`** — large HH:MM, day counter, battery (same as built-in)
-- **`faces/minimal.js`** — large HH:MM only, no decoration
+| Face | Description |
+|------|-------------|
+| `faces/digital.js` | Large HH:MM + day counter + battery (JS mirror of built-in) |
+| `faces/minimal.js` | Large HH:MM only, no decoration |
+| `faces/bold.js` | HH:MM:SS — redraws every second |
+| `faces/status.js` | Info-dense: double border + time + day/battery data strip |
+| `faces/roman.js` | Roman numeral clock (e.g. `XI : XLV`) |
 
