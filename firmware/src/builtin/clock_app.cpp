@@ -112,10 +112,10 @@ static bool load_js_face(int idx) {
 
     size_t total = 0;
     while (total < (size_t)sz) {
-        size_t want = (SD_CHUNK_SIZE < (sz - (int32_t)total))
-                      ? (size_t)SD_CHUNK_SIZE
-                      : (size_t)(sz - (int32_t)total);
-        int n = sd_read(fh, (char *)(buf + total), want);
+        size_t bytes_to_read = ((size_t)SD_CHUNK_SIZE < (size_t)(sz - (int32_t)total))
+                               ? (size_t)SD_CHUNK_SIZE
+                               : (size_t)(sz - (int32_t)total);
+        int n = sd_read(fh, (char *)(buf + total), bytes_to_read);
         if (n <= 0) break;
         total += (size_t)n;
     }
