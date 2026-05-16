@@ -119,6 +119,21 @@ JSValue js_x4_display_wake(JSContext *ctx, JSValue *this_val,
     return JS_UNDEFINED;
 }
 
+// display.setRotation(r) — set screen rotation 0–3
+JSValue js_x4_display_setRotation(JSContext *ctx, JSValue *this_val,
+                                   int argc, JSValue *argv) {
+    int r = 0;
+    if (argc >= 1) JS_ToInt32(ctx, &r, argv[0]);
+    display_set_rotation((uint8_t)r);
+    return JS_UNDEFINED;
+}
+
+// display.rotation() → int (0–3)
+JSValue js_x4_display_rotation(JSContext *ctx, JSValue *this_val,
+                                int argc, JSValue *argv) {
+    return JS_NewInt32(ctx, (int32_t)display_get_rotation());
+}
+
 } // extern "C"
 
 // The closing brace above ends extern "C". The new bindings are added below.
