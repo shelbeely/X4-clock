@@ -153,13 +153,15 @@ static bool save_reminders() {
     if (!sdcard_available()) return false;
     sdcard_wake();
 
-    // Max bytes: 16 × (64+128+128+60) ≈ 6080; use 6 KB
-    static char buf[6144];
+    // REM_SAVE_BUFFER_SIZE = REM_MAX_ITEMS × (fields + JSON markup) + brackets
+    // = 16 × (64 + 128 + 128 + 60) + 2 = 6082 → rounded up to 6144
+    static const int REM_SAVE_BUFFER_SIZE = 6144;
+    static char buf[REM_SAVE_BUFFER_SIZE];
     int pos = 0;
     buf[pos++] = '[';
     for (int i = 0; i < s_count; i++) {
         if (i > 0) buf[pos++] = ',';
-        pos += snprintf(buf + pos, (int)sizeof(buf) - pos,
+        pos += snprintf(buf + pos, REM_SAVE_BUFFER_SIZE - pos,
                         "{\"id\":%d,\"title\":\"%s\","
                         "\"time\":%u,\"body\":\"%s\",\"recurring\":%u}",
                         (int)s_items[i].id, s_items[i].title,

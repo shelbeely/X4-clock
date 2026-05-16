@@ -35,6 +35,7 @@
     "http://api.openweathermap.org/data/2.5/weather?q=%s&appid=%s&units=metric"
 #define WEATHER_TIMEOUT_MS  10000
 #define WEATHER_BODY_MAX    4096
+#define WEATHER_SETTINGS_MAX  1024
 #define SETTINGS_PATH       "/config/settings.json"
 
 // ---------------------------------------------------------------------------
@@ -95,7 +96,7 @@ void weather_init() {
     if (!sd_exists(SETTINGS_PATH)) return;
 
     int32_t sz = sd_size(SETTINGS_PATH);
-    if (sz <= 0 || sz > 1024) return;
+    if (sz <= 0 || sz > WEATHER_SETTINGS_MAX) return;
 
     static char buf[1025];
     int fh = sd_open(SETTINGS_PATH, 'r');
