@@ -87,10 +87,75 @@ Button names: `"right"`, `"left"`, `"confirm"`, `"back"`, `"volup"`, `"voldown"`
 | `system.millis()` | Milliseconds since boot. |
 | `system.battery()` | Battery percentage 0–100. |
 | `system.batteryLow()` | Returns `true` when battery ≤ 5 % and not charging. Use to show a low-battery indicator in your face. |
-| `system.sleep(ms)` | Enter deep sleep. `ms=0` = wake only on power button. |
+| `system.sleep(ms)` | Enter deep sleep. Hibernates the display automatically. `ms=0` = wake only on power button. |
+| `system.lightSleep(ms)` | Enter light sleep for up to `ms` milliseconds. Preserves RAM and WiFi state. Wakeable by timer, power button, or any nav/vol button. Returns actual sleep duration in ms. |
 | `system.setIdleTimeout(ms)` | Set auto-sleep idle timeout in ms (default 600 000 = 10 min). Pass `0` to disable. Only active when on battery. |
+| `system.setRefreshInterval(ms)` | Set the sleep duration between `loop()` calls (default 20 ms). Higher values save more power; lower values improve responsiveness. Range: 1–60 000 ms. |
 | `system.log(msg)` | Print message to USB Serial (development). |
 | `system.appName()` | Filename of the running app. |
+
+### `display.*` — new methods
+
+| Call | Description |
+|------|-------------|
+| `display.setRotation(r)` | Set screen orientation. `r`: 0 = landscape (default, 800×480), 1 = portrait (480×800), 2 = reversed landscape, 3 = reversed portrait. Persists across hibernate/wake. |
+| `display.rotation()` | Returns current rotation (0–3). |
+
+### `wifi.*`
+
+Requires `WiFi` hardware.  All calls are synchronous.
+
+| Call | Description |
+|------|-------------|
+| `wifi.connect(ssid, pass)` | Connect to a WiFi network (station mode). Blocks up to 10 s. Returns `true` on success. `pass` may be `""` for open networks. |
+| `wifi.startAP(ssid, pass)` | Start a SoftAP (access point). `pass` may be `""` for open network. Returns `true` on success. |
+| `wifi.disconnect()` | Disconnect from network or stop AP and turn WiFi off. |
+| `wifi.connected()` | Returns `true` when associated to an AP. |
+| `wifi.ip()` | Returns current IP address as a string (e.g. `"192.168.1.42"`). Returns `"0.0.0.0"` when not connected. |
+
+Credentials can be loaded automatically by calling `wifi.connect()` without arguments — the firmware reads `/config/wifi.json` (`{"ssid":"…","pass":"…"}`) if it exists.
+
+### `http.*`
+
+Requires WiFi to be connected.  Response bodies are capped at **4 096 bytes** to stay within the JS heap budget.
+
+| Call | Description |
+|------|-------------|
+| `http.get(url)` | Synchronous HTTP GET. Returns response body as a string, or `""` on error. |
+| `http.getAsync(url, callback)` | Non-blocking GET. `callback(error, body)` is called on the next `loop()` tick. `error` is `""` on success. Only one async request may be in flight at a time. |
+
+### `server.*`
+
+Requires WiFi (station or AP mode).  Call `server.handleClient()` from `loop()` to process incoming requests.
+
+| Call | Description |
+|------|-------------|
+| `server.begin(port)` | Start the HTTP server on the given port (default 80). |
+| `server.stop()` | Stop the server and free resources. |
+| `server.onRequest(path, fn)` | Register route handler. `fn(method, body)` is called synchronously from `handleClient()`. Up to 8 routes. |
+| `server.send(code, contentType, body)` | Send an HTTP response. Must be called from inside a route handler. |
+| `server.handleClient()` | Process one pending HTTP request. Call from `loop()`. |
+
+**Example — minimal settings page:**
+
+```js
+function setup() {
+  wifi.startAP("X4-Setup", "configure");
+  server.begin(80);
+  server.onRequest("/", function(method, body) {
+    server.send(200, "text/html", "<h1>Hello from X4!</h1>");
+  });
+  server.onRequest("/api/save", function(method, body) {
+    var data = JSON.parse(body);
+    system.log("Received: " + JSON.stringify(data));
+    server.send(200, "text/plain", "Saved");
+  });
+}
+
+function loop() {
+  server.handleClient();
+}
+```
 
 ### `gc()`
 
@@ -242,6 +307,9 @@ shown at boot.
 | `stopwatch.js` | Start/stop/reset stopwatch with live per-second updates |
 | `countdown.js` | Countdown timer — set duration with LEFT/RIGHT, start/pause with CONFIRM, saves last duration |
 | `battery_monitor.js` | Live battery gauge — large percentage number and a proportional fill bar |
+| `weather.js` | OpenWeatherMap forecast — temperature, condition, humidity; auto-refreshes every 10 min |
+| `notifications.js` | Notification viewer — displays events from `/notifications/pending.json` |
+| `setup_server.js` | Web configuration portal — AP mode + browser UI to configure WiFi, display, and weather |
 
 ---
 

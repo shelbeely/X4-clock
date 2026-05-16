@@ -31,6 +31,15 @@ void display_draw_bitmap(int16_t x, int16_t y, const char *sd_path);
 int16_t display_width();
 int16_t display_height();
 
+// Rotation
+// r = 0: landscape, (0,0) = top-left  (default, 800×480)
+// r = 1: portrait,  (0,0) = top-right (480×800)
+// r = 2: landscape, (0,0) = bottom-right (reversed, 800×480)
+// r = 3: portrait,  (0,0) = bottom-left (reversed, 480×800)
+// Rotation is preserved across hibernate/wake cycles.
+void display_set_rotation(uint8_t r);
+uint8_t display_get_rotation();
+
 // Power management
 // display_hibernate() sends the SSD1677 into its lowest-power standby (few µA).
 // display_wake() exits standby; must be called before any drawing operation

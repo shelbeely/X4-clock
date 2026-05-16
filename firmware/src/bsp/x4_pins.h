@@ -120,6 +120,24 @@
 #define IDLE_SLEEP_MS   600000U  // 10 minutes
 
 // ---------------------------------------------------------------------------
+// Loop sleep interval (light sleep between loop() calls on battery)
+// Controls the trade-off between responsiveness and power consumption.
+// Can be overridden at runtime from JS with system.setRefreshInterval(ms).
+// ---------------------------------------------------------------------------
+#define LOOP_SLEEP_MS   20U     // default: 20 ms (50 Hz wake rate)
+
+// ---------------------------------------------------------------------------
+// Light-sleep GPIO wakeup for nav buttons
+// GPIO1 (Row1 ADC ladder) and GPIO2 (Row2 ADC ladder) go LOW when any button
+// on that row is pressed.  We use this to wake from light sleep so button
+// presses are not missed during the inter-loop sleep.
+// Note: deep sleep wakeup from GPIO1/GPIO2 is NOT supported because the ADC
+// is powered off in deep sleep.  Only GPIO3 (power button) wakes deep sleep.
+// ---------------------------------------------------------------------------
+#define BTN_WAKEUP_GPIO1    PIN_BTN_ROW1   // nav buttons
+#define BTN_WAKEUP_GPIO2    PIN_BTN_ROW2   // volume buttons
+
+// ---------------------------------------------------------------------------
 // Deep sleep wakeup (power button = GPIO3, active LOW)
 // ---------------------------------------------------------------------------
 #define WAKEUP_GPIO_MASK    (1ULL << PIN_BTN_POWER)

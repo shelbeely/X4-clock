@@ -6,6 +6,7 @@
 #include "js_engine.h"
 #include "js_input.h"
 #include "js_system.h"
+#include "js_http_client.h"
 #include "drivers/display.h"
 #include "drivers/buttons.h"
 #include "drivers/battery.h"
@@ -329,6 +330,10 @@ static void launch_app(int idx) {
 
     // One-time light-sleep wakeup source: power button (GPIO3 LOW)
     gpio_wakeup_enable((gpio_num_t)PIN_BTN_POWER, GPIO_INTR_LOW_LEVEL);
+    // Nav buttons (GPIO1) and volume buttons (GPIO2) also wake light sleep.
+    // These GPIO lines go LOW when any button on the ADC ladder is pressed.
+    gpio_wakeup_enable((gpio_num_t)BTN_WAKEUP_GPIO1, GPIO_INTR_LOW_LEVEL);
+    gpio_wakeup_enable((gpio_num_t)BTN_WAKEUP_GPIO2, GPIO_INTR_LOW_LEVEL);
     esp_sleep_enable_gpio_wakeup();
 
     // Main loop
@@ -349,6 +354,9 @@ static void launch_app(int idx) {
         uint32_t now = millis();
         last_loop_start = now;
         js_engine_call_func(ctx, "loop");
+
+        // Deliver any pending async HTTP result to the JS callback
+        js_http_poll(ctx);
 
         // Watchdog: if loop() took too long something is wrong
         uint32_t elapsed = millis() - last_loop_start;
@@ -387,10 +395,12 @@ static void launch_app(int idx) {
         }
 
         // Sleep between loop() calls on battery to save power.
-        // 20 ms gives adequate responsiveness while cutting CPU duty cycle
-        // drastically vs the previous vTaskDelay(5).
+        // Use the JS-configurable interval.  For intervals ≥ 500 ms a single
+        // longer light-sleep is used; for shorter intervals the standard
+        // 20 ms tick keeps the button queue responsive.
         if (!battery_charging()) {
-            esp_sleep_enable_timer_wakeup(20 * 1000ULL);
+            uint32_t sleep_us = js_system_loop_sleep_ms() * 1000ULL;
+            esp_sleep_enable_timer_wakeup(sleep_us);
             esp_light_sleep_start();
         } else {
             vTaskDelay(pdMS_TO_TICKS(5));
@@ -401,4 +411,6 @@ static void launch_app(int idx) {
     // Free bytecode buffer now that the context (and all references into buf) is gone.
     // For source apps buf was already freed to nullptr after JS_Eval.
     if (buf) { free(buf); }
+    // Cancel any pending async HTTP request tied to this context.
+    js_http_reset();
 }

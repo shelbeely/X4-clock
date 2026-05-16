@@ -69,6 +69,8 @@ pio run -t upload
 # Create required directories
 mkdir -p <SD>/apps
 mkdir -p <SD>/faces
+mkdir -p <SD>/config
+mkdir -p <SD>/notifications
 
 # Copy the example apps
 cp apps/clock.js            <SD>/apps/clock.js
@@ -76,6 +78,9 @@ cp apps/hello.js            <SD>/apps/hello.js
 cp apps/stopwatch.js        <SD>/apps/stopwatch.js
 cp apps/countdown.js        <SD>/apps/countdown.js
 cp apps/battery_monitor.js  <SD>/apps/battery_monitor.js
+cp apps/weather.js          <SD>/apps/weather.js
+cp apps/notifications.js    <SD>/apps/notifications.js
+cp apps/setup_server.js     <SD>/apps/setup_server.js
 
 # Copy the clock faces
 cp apps/faces/digital.js     <SD>/faces/digital.js
@@ -166,6 +171,25 @@ See [apps/README.md](apps/README.md) for the complete face developer guide.
 | `stopwatch.js` | Start/stop/reset stopwatch |
 | `countdown.js` | Countdown timer with adjustable duration, pause, and persistent settings |
 | `battery_monitor.js` | Live battery percentage with bar graph |
+| `weather.js` | OpenWeatherMap current weather — temperature, condition, humidity |
+| `notifications.js` | Notification viewer from `/notifications/pending.json` |
+| `setup_server.js` | Browser-based WiFi & display configuration portal (AP mode) |
+
+---
+
+## SD Card Config Layout
+
+```
+SD:/
+├── apps/              ← JS app files
+├── faces/             ← clock face files
+├── config/
+│   ├── wifi.json      ← {"ssid":"…","pass":"…"}
+│   ├── settings.json  ← {"rotation":0,"refresh_ms":20,"tz_offset":0,"owm_key":"…","city":"London"}
+│   └── index.html     ← optional custom settings page
+└── notifications/
+    └── pending.json   ← [{"title":"…","time":540,"body":"…"},…]
+```
 
 ---
 
@@ -173,10 +197,13 @@ See [apps/README.md](apps/README.md) for the complete face developer guide.
 
 | Object | Methods |
 |--------|---------|
-| `display` | `clear()`, `print(x,y,text,size)`, `drawRect()`, `drawBitmap()`, `refresh()`, `partialRefresh()`, `width()`, `height()` |
+| `display` | `clear()`, `print(x,y,text,size)`, `drawRect()`, `drawBitmap()`, `refresh()`, `partialRefresh()`, `width()`, `height()`, `setRotation(r)`, `rotation()` |
 | `input` | `onButton(fn)` |
 | `fs` | `open()`, `read()`, `write()`, `close()`, `seek()`, `size()`, `list()`, `exists()` |
-| `system` | `millis()`, `battery()`, `sleep(ms)`, `log(msg)`, `appName()` |
+| `system` | `millis()`, `battery()`, `batteryLow()`, `sleep(ms)`, `lightSleep(ms)`, `setIdleTimeout(ms)`, `setRefreshInterval(ms)`, `log(msg)`, `appName()` |
+| `wifi` | `connect(ssid, pass)`, `startAP(ssid, pass)`, `disconnect()`, `connected()`, `ip()` |
+| `http` | `get(url)`, `getAsync(url, cb)` |
+| `server` | `begin(port)`, `stop()`, `onRequest(path, fn)`, `send(code, type, body)`, `handleClient()` |
 | global | `gc()` |
 
 ## JavaScript Runtime: MicroQuickJS

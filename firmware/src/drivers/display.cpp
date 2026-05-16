@@ -31,6 +31,10 @@ static bool _dirty = false;
 // Tracks whether the display is in low-power hibernate mode
 static bool _hibernated = false;
 
+// Current rotation (0–3).  Persisted across hibernate/wake so display_wake()
+// restores the correct orientation.
+static uint8_t _rotation = 0;
+
 // ---------------------------------------------------------------------------
 // Internal: choose font based on caller's size_factor (1–4)
 // ---------------------------------------------------------------------------
@@ -50,7 +54,7 @@ static void set_font(uint8_t size_factor) {
 void display_init(SPIClass &spi) {
     epd.epd2.selectSPI(spi, SPISettings(EPD_SPI_MHZ * 1000000UL, MSBFIRST, SPI_MODE0));
     epd.init(115200, true, 2, false);
-    epd.setRotation(0);         // portrait: (0,0) = top-left
+    epd.setRotation(_rotation);
     epd.setTextColor(GxEPD_BLACK);
     epd.setTextWrap(false);
     _dirty      = false;
@@ -72,7 +76,7 @@ void display_wake() {
     // Toggle RST and run the minimal init sequence to exit deep sleep.
     // The 'false' initial flag skips slow one-time calibration steps.
     epd.init(115200, false, 2, false);
-    epd.setRotation(0);
+    epd.setRotation(_rotation);
     epd.setTextColor(GxEPD_BLACK);
     epd.setTextWrap(false);
     _hibernated = false;
@@ -199,3 +203,18 @@ void display_draw_bitmap(int16_t dx, int16_t dy, const char *sd_path) {
 
 int16_t display_width()  { return EPD_WIDTH;  }
 int16_t display_height() { return EPD_HEIGHT; }
+
+// ---------------------------------------------------------------------------
+// Rotation
+// ---------------------------------------------------------------------------
+
+void display_set_rotation(uint8_t r) {
+    if (r > 3) r = 0;
+    _rotation = r;
+    display_wake();          // ensure display is active before re-configuring
+    epd.setRotation(_rotation);
+}
+
+uint8_t display_get_rotation() {
+    return _rotation;
+}

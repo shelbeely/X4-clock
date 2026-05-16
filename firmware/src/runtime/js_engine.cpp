@@ -30,6 +30,8 @@ extern "C" {
     extern JSCFunction js_x4_display_height;
     extern JSCFunction js_x4_display_hibernate;
     extern JSCFunction js_x4_display_wake;
+    extern JSCFunction js_x4_display_setRotation;
+    extern JSCFunction js_x4_display_rotation;
     // input.* bindings (js_input.cpp)
     extern JSCFunction js_x4_input_onButton;
     // fs.* bindings (js_fs.cpp)
@@ -46,9 +48,26 @@ extern "C" {
     extern JSCFunction js_x4_system_battery;
     extern JSCFunction js_x4_system_batteryLow;
     extern JSCFunction js_x4_system_sleep;
+    extern JSCFunction js_x4_system_lightSleep;
     extern JSCFunction js_x4_system_setIdleTimeout;
+    extern JSCFunction js_x4_system_setRefreshInterval;
     extern JSCFunction js_x4_system_log;
     extern JSCFunction js_x4_system_appName;
+    // wifi.* bindings (js_wifi.cpp)
+    extern JSCFunction js_x4_wifi_connect;
+    extern JSCFunction js_x4_wifi_startAP;
+    extern JSCFunction js_x4_wifi_disconnect;
+    extern JSCFunction js_x4_wifi_connected;
+    extern JSCFunction js_x4_wifi_ip;
+    // http.* bindings (js_http_client.cpp)
+    extern JSCFunction js_x4_http_get;
+    extern JSCFunction js_x4_http_getAsync;
+    // server.* bindings (js_http_server.cpp)
+    extern JSCFunction js_x4_server_begin;
+    extern JSCFunction js_x4_server_stop;
+    extern JSCFunction js_x4_server_onRequest;
+    extern JSCFunction js_x4_server_send;
+    extern JSCFunction js_x4_server_handleClient;
 }
 
 // The generated stdlib header (produced by fetch_mquickjs.sh) — must be

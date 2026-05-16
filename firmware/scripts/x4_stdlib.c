@@ -338,6 +338,8 @@ static const JSPropDef x4_display_props[] = {
     JS_CFUNC_DEF("height",         0, js_x4_display_height),
     JS_CFUNC_DEF("hibernate",      0, js_x4_display_hibernate),
     JS_CFUNC_DEF("wake",           0, js_x4_display_wake),
+    JS_CFUNC_DEF("setRotation",    1, js_x4_display_setRotation),
+    JS_CFUNC_DEF("rotation",       0, js_x4_display_rotation),
     JS_PROP_END,
 };
 static const JSClassDef x4_display_obj = JS_OBJECT_DEF("display", x4_display_props);
@@ -365,16 +367,48 @@ static const JSClassDef x4_fs_obj = JS_OBJECT_DEF("fs", x4_fs_props);
 
 /* system.* */
 static const JSPropDef x4_system_props[] = {
-    JS_CFUNC_DEF("millis",           0, js_x4_system_millis),
-    JS_CFUNC_DEF("battery",          0, js_x4_system_battery),
-    JS_CFUNC_DEF("batteryLow",       0, js_x4_system_batteryLow),
-    JS_CFUNC_DEF("sleep",            1, js_x4_system_sleep),
-    JS_CFUNC_DEF("setIdleTimeout",   1, js_x4_system_setIdleTimeout),
-    JS_CFUNC_DEF("log",              1, js_x4_system_log),
-    JS_CFUNC_DEF("appName",          0, js_x4_system_appName),
+    JS_CFUNC_DEF("millis",              0, js_x4_system_millis),
+    JS_CFUNC_DEF("battery",             0, js_x4_system_battery),
+    JS_CFUNC_DEF("batteryLow",          0, js_x4_system_batteryLow),
+    JS_CFUNC_DEF("sleep",               1, js_x4_system_sleep),
+    JS_CFUNC_DEF("lightSleep",          1, js_x4_system_lightSleep),
+    JS_CFUNC_DEF("setIdleTimeout",      1, js_x4_system_setIdleTimeout),
+    JS_CFUNC_DEF("setRefreshInterval",  1, js_x4_system_setRefreshInterval),
+    JS_CFUNC_DEF("log",                 1, js_x4_system_log),
+    JS_CFUNC_DEF("appName",             0, js_x4_system_appName),
     JS_PROP_END,
 };
 static const JSClassDef x4_system_obj = JS_OBJECT_DEF("system", x4_system_props);
+
+/* wifi.* */
+static const JSPropDef x4_wifi_props[] = {
+    JS_CFUNC_DEF("connect",    2, js_x4_wifi_connect),
+    JS_CFUNC_DEF("startAP",    2, js_x4_wifi_startAP),
+    JS_CFUNC_DEF("disconnect", 0, js_x4_wifi_disconnect),
+    JS_CFUNC_DEF("connected",  0, js_x4_wifi_connected),
+    JS_CFUNC_DEF("ip",         0, js_x4_wifi_ip),
+    JS_PROP_END,
+};
+static const JSClassDef x4_wifi_obj = JS_OBJECT_DEF("wifi", x4_wifi_props);
+
+/* http.* */
+static const JSPropDef x4_http_props[] = {
+    JS_CFUNC_DEF("get",      1, js_x4_http_get),
+    JS_CFUNC_DEF("getAsync", 2, js_x4_http_getAsync),
+    JS_PROP_END,
+};
+static const JSClassDef x4_http_obj = JS_OBJECT_DEF("http", x4_http_props);
+
+/* server.* */
+static const JSPropDef x4_server_props[] = {
+    JS_CFUNC_DEF("begin",         1, js_x4_server_begin),
+    JS_CFUNC_DEF("stop",          0, js_x4_server_stop),
+    JS_CFUNC_DEF("onRequest",     2, js_x4_server_onRequest),
+    JS_CFUNC_DEF("send",          3, js_x4_server_send),
+    JS_CFUNC_DEF("handleClient",  0, js_x4_server_handleClient),
+    JS_PROP_END,
+};
+static const JSClassDef x4_server_obj = JS_OBJECT_DEF("server", x4_server_props);
 
 /* =========================================================================
  * Global object
@@ -432,6 +466,9 @@ static const JSPropDef js_global_object[] = {
     JS_PROP_CLASS_DEF("input",   &x4_input_obj),
     JS_PROP_CLASS_DEF("fs",      &x4_fs_obj),
     JS_PROP_CLASS_DEF("system",  &x4_system_obj),
+    JS_PROP_CLASS_DEF("wifi",    &x4_wifi_obj),
+    JS_PROP_CLASS_DEF("http",    &x4_http_obj),
+    JS_PROP_CLASS_DEF("server",  &x4_server_obj),
     JS_PROP_END,
 };
 
