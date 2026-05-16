@@ -376,6 +376,9 @@ static const JSPropDef x4_system_props[] = {
     JS_CFUNC_DEF("setRefreshInterval",  1, js_x4_system_setRefreshInterval),
     JS_CFUNC_DEF("log",                 1, js_x4_system_log),
     JS_CFUNC_DEF("appName",             0, js_x4_system_appName),
+    JS_CFUNC_DEF("time",                0, js_x4_system_time),
+    JS_CFUNC_DEF("setTime",             1, js_x4_system_setTime),
+    JS_CFUNC_DEF("syncTime",            1, js_x4_system_syncTime),
     JS_PROP_END,
 };
 static const JSClassDef x4_system_obj = JS_OBJECT_DEF("system", x4_system_props);
@@ -409,6 +412,54 @@ static const JSPropDef x4_server_props[] = {
     JS_PROP_END,
 };
 static const JSClassDef x4_server_obj = JS_OBJECT_DEF("server", x4_server_props);
+
+/* notify.* */
+static const JSPropDef x4_notify_props[] = {
+    JS_CFUNC_DEF("count",   0, js_x4_notify_count),
+    JS_CFUNC_DEF("get",     1, js_x4_notify_get),
+    JS_CFUNC_DEF("dismiss", 1, js_x4_notify_dismiss),
+    JS_CFUNC_DEF("reload",  0, js_x4_notify_reload),
+    JS_PROP_END,
+};
+static const JSClassDef x4_notify_obj = JS_OBJECT_DEF("notify", x4_notify_props);
+
+/* weather.* */
+static const JSPropDef x4_weather_props[] = {
+    JS_CFUNC_DEF("refresh",   0, js_x4_weather_refresh),
+    JS_CFUNC_DEF("valid",     0, js_x4_weather_valid),
+    JS_CFUNC_DEF("temp",      0, js_x4_weather_temp),
+    JS_CFUNC_DEF("humidity",  0, js_x4_weather_humidity),
+    JS_CFUNC_DEF("condition", 0, js_x4_weather_condition),
+    JS_CFUNC_DEF("city",      0, js_x4_weather_city),
+    JS_CFUNC_DEF("age",       0, js_x4_weather_age),
+    JS_PROP_END,
+};
+static const JSClassDef x4_weather_obj = JS_OBJECT_DEF("weather", x4_weather_props);
+
+/* calendar.* */
+static const JSPropDef x4_calendar_props[] = {
+    JS_CFUNC_DEF("count",    0, js_x4_calendar_count),
+    JS_CFUNC_DEF("get",      1, js_x4_calendar_get),
+    JS_CFUNC_DEF("upcoming", 0, js_x4_calendar_upcoming),
+    JS_CFUNC_DEF("add",      4, js_x4_calendar_add),
+    JS_CFUNC_DEF("remove",   1, js_x4_calendar_remove),
+    JS_CFUNC_DEF("reload",   0, js_x4_calendar_reload),
+    JS_PROP_END,
+};
+static const JSClassDef x4_calendar_obj = JS_OBJECT_DEF("calendar", x4_calendar_props);
+
+/* reminder.* */
+static const JSPropDef x4_reminder_props[] = {
+    JS_CFUNC_DEF("count",   0, js_x4_reminder_count),
+    JS_CFUNC_DEF("get",     1, js_x4_reminder_get),
+    JS_CFUNC_DEF("due",     0, js_x4_reminder_due),
+    JS_CFUNC_DEF("dismiss", 1, js_x4_reminder_dismiss),
+    JS_CFUNC_DEF("add",     4, js_x4_reminder_add),
+    JS_CFUNC_DEF("remove",  1, js_x4_reminder_remove),
+    JS_CFUNC_DEF("reload",  0, js_x4_reminder_reload),
+    JS_PROP_END,
+};
+static const JSClassDef x4_reminder_obj = JS_OBJECT_DEF("reminder", x4_reminder_props);
 
 /* =========================================================================
  * Global object
@@ -466,9 +517,13 @@ static const JSPropDef js_global_object[] = {
     JS_PROP_CLASS_DEF("input",   &x4_input_obj),
     JS_PROP_CLASS_DEF("fs",      &x4_fs_obj),
     JS_PROP_CLASS_DEF("system",  &x4_system_obj),
-    JS_PROP_CLASS_DEF("wifi",    &x4_wifi_obj),
-    JS_PROP_CLASS_DEF("http",    &x4_http_obj),
-    JS_PROP_CLASS_DEF("server",  &x4_server_obj),
+    JS_PROP_CLASS_DEF("wifi",     &x4_wifi_obj),
+    JS_PROP_CLASS_DEF("http",     &x4_http_obj),
+    JS_PROP_CLASS_DEF("server",   &x4_server_obj),
+    JS_PROP_CLASS_DEF("notify",   &x4_notify_obj),
+    JS_PROP_CLASS_DEF("weather",  &x4_weather_obj),
+    JS_PROP_CLASS_DEF("calendar", &x4_calendar_obj),
+    JS_PROP_CLASS_DEF("reminder", &x4_reminder_obj),
     JS_PROP_END,
 };
 

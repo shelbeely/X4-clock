@@ -53,6 +53,9 @@ extern "C" {
     extern JSCFunction js_x4_system_setRefreshInterval;
     extern JSCFunction js_x4_system_log;
     extern JSCFunction js_x4_system_appName;
+    extern JSCFunction js_x4_system_time;
+    extern JSCFunction js_x4_system_setTime;
+    extern JSCFunction js_x4_system_syncTime;
     // wifi.* bindings (js_wifi.cpp)
     extern JSCFunction js_x4_wifi_connect;
     extern JSCFunction js_x4_wifi_startAP;
@@ -68,6 +71,34 @@ extern "C" {
     extern JSCFunction js_x4_server_onRequest;
     extern JSCFunction js_x4_server_send;
     extern JSCFunction js_x4_server_handleClient;
+    // notify.* bindings (js_notify.cpp)
+    extern JSCFunction js_x4_notify_count;
+    extern JSCFunction js_x4_notify_get;
+    extern JSCFunction js_x4_notify_dismiss;
+    extern JSCFunction js_x4_notify_reload;
+    // weather.* bindings (js_weather.cpp)
+    extern JSCFunction js_x4_weather_refresh;
+    extern JSCFunction js_x4_weather_valid;
+    extern JSCFunction js_x4_weather_temp;
+    extern JSCFunction js_x4_weather_humidity;
+    extern JSCFunction js_x4_weather_condition;
+    extern JSCFunction js_x4_weather_city;
+    extern JSCFunction js_x4_weather_age;
+    // calendar.* bindings (js_calendar.cpp)
+    extern JSCFunction js_x4_calendar_count;
+    extern JSCFunction js_x4_calendar_get;
+    extern JSCFunction js_x4_calendar_upcoming;
+    extern JSCFunction js_x4_calendar_add;
+    extern JSCFunction js_x4_calendar_remove;
+    extern JSCFunction js_x4_calendar_reload;
+    // reminder.* bindings (js_reminder.cpp)
+    extern JSCFunction js_x4_reminder_count;
+    extern JSCFunction js_x4_reminder_get;
+    extern JSCFunction js_x4_reminder_due;
+    extern JSCFunction js_x4_reminder_dismiss;
+    extern JSCFunction js_x4_reminder_add;
+    extern JSCFunction js_x4_reminder_remove;
+    extern JSCFunction js_x4_reminder_reload;
 }
 
 // The generated stdlib header (produced by fetch_mquickjs.sh) — must be

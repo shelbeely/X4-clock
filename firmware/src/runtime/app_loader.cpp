@@ -7,6 +7,10 @@
 #include "js_input.h"
 #include "js_system.h"
 #include "js_http_client.h"
+#include "js_notify.h"
+#include "js_weather.h"
+#include "js_calendar.h"
+#include "js_reminder.h"
 #include "drivers/display.h"
 #include "drivers/buttons.h"
 #include "drivers/battery.h"
@@ -71,6 +75,13 @@ void app_loader_run() {
 
     if (sdcard_available()) {
         scan_apps();   // appends SD apps starting at s_app_names[s_app_count]
+
+        // Load core firmware data caches from SD.
+        // These persist in C-side static arrays across all JS context reloads.
+        notify_init();
+        weather_init();
+        calendar_init();
+        reminder_init();
     }
 
     // Default to the built-in clock (idx 0) unless default.txt says otherwise

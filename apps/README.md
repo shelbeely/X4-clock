@@ -93,6 +93,9 @@ Button names: `"right"`, `"left"`, `"confirm"`, `"back"`, `"volup"`, `"voldown"`
 | `system.setRefreshInterval(ms)` | Set the sleep duration between `loop()` calls (default 20 ms). Higher values save more power; lower values improve responsiveness. Range: 1–60 000 ms. |
 | `system.log(msg)` | Print message to USB Serial (development). |
 | `system.appName()` | Filename of the running app. |
+| `system.time()` | Current Unix timestamp (seconds). Returns `0` if the clock has not been set via `system.setTime()` or `system.syncTime()`. |
+| `system.setTime(unix_ts)` | Manually set the real-time clock. `unix_ts` is seconds since 1970-01-01 UTC. |
+| `system.syncTime([tz_offset_hours])` | Synchronise the RTC via NTP (requires WiFi). `tz_offset_hours` is the integer UTC offset (e.g. `-5` for EST, `2` for CEST). Blocks up to 10 s. Returns `true` on success. |
 
 ### `display.*` — new methods
 
@@ -156,6 +159,131 @@ function loop() {
   server.handleClient();
 }
 ```
+
+### `notify.*`
+
+Notification items are loaded from `/notifications/pending.json` at boot and
+cached in firmware memory.  The cache persists across face and app switches.
+
+**File format** (`/notifications/pending.json`):
+```json
+[{"title":"Team standup","time":"09:00","body":"Zoom link in calendar"}]
+```
+
+| Call | Description |
+|------|-------------|
+| `notify.count()` | Number of notifications in the cache. |
+| `notify.get(idx)` | Returns `{title, time, body}` for index `idx`, or `null` if out of range. |
+| `notify.dismiss(idx)` | Remove item at `idx` and persist the updated list to SD. |
+| `notify.reload()` | Re-read `/notifications/pending.json` from SD into the cache. |
+
+**Clock face example** — show notification count in the corner:
+```js
+function draw() {
+  var n = notify.count();
+  if (n > 0) {
+    display.print(700, 20, n + " notif", 1);
+  }
+}
+```
+
+---
+
+### `weather.*`
+
+Weather data is fetched from OpenWeatherMap and cached in firmware memory.
+Configure `owm_key` and `city` in `/config/settings.json` before calling
+`weather.refresh()`.
+
+**Settings file** (`/config/settings.json`):
+```json
+{"owm_key":"YOUR_API_KEY","city":"London","tz_offset":0}
+```
+
+| Call | Description |
+|------|-------------|
+| `weather.refresh()` | Synchronous HTTP GET to OWM. Requires WiFi. Blocks ~1–3 s. Returns `true` on success. |
+| `weather.valid()` | `true` if the cache contains fresh data. |
+| `weather.temp()` | Temperature in °C (float). |
+| `weather.humidity()` | Humidity 0–100 %. |
+| `weather.condition()` | Condition string, e.g. `"clear sky"`. |
+| `weather.city()` | City name returned by the API. |
+| `weather.age()` | Milliseconds since last `refresh()`, or `-1` if never refreshed. |
+
+**Clock face example** — refresh once in setup, show in draw:
+```js
+function setup() {
+  if (wifi.connect()) {
+    weather.refresh();
+    wifi.disconnect();
+  }
+  display.clear();
+  display.refresh();
+}
+
+function draw() {
+  if (!weather.valid()) return;
+  display.print(20, 420, weather.city() + "  " + weather.temp() + "C  " + weather.condition(), 1);
+}
+```
+
+---
+
+### `calendar.*`
+
+Calendar events are loaded from `/calendar/events.json` at boot.  Uses Unix
+timestamps; call `system.setTime()` or `system.syncTime()` first so that
+`calendar.upcoming()` returns a meaningful count.
+
+**File format** (`/calendar/events.json`):
+```json
+[{"id":1,"title":"Dentist","start":1716086400,"end":1716090000,"desc":"Floor 3"}]
+```
+
+| Call | Description |
+|------|-------------|
+| `calendar.count()` | Total events in cache. |
+| `calendar.get(idx)` | Returns `{id, title, start, end, desc}` or `null`. `start`/`end` are Unix timestamps. |
+| `calendar.upcoming()` | Count of events where `start >= system.time()`. Returns `0` if clock not set. |
+| `calendar.add(title, start[, end[, desc]])` | Append event and persist to SD. Returns `true` on success. |
+| `calendar.remove(id)` | Remove event by `id` and persist to SD. Returns `true` on success. |
+| `calendar.reload()` | Re-read `/calendar/events.json` from SD. |
+
+---
+
+### `reminder.*`
+
+Reminders are loaded from `/reminders/pending.json` at boot.  Use Unix
+timestamps for `time`; set the clock with `system.syncTime()` for `reminder.due()` to work correctly.
+
+**File format** (`/reminders/pending.json`):
+```json
+[{"id":1,"title":"Take meds","time":1716001200,"body":"Morning","recurring":86400}]
+```
+
+`recurring` is the repeat interval in seconds (`0` = one-shot).
+
+| Call | Description |
+|------|-------------|
+| `reminder.count()` | Total reminders in cache. |
+| `reminder.get(idx)` | Returns `{id, title, time, body, recurring}` or `null`. |
+| `reminder.due()` | Count of reminders where `time <= system.time()`. Returns `0` if clock not set. |
+| `reminder.dismiss(id)` | One-shot: removes reminder and saves. Recurring: advances `time` by `recurring` seconds and saves. |
+| `reminder.add(title, time[, body[, recurring]])` | Append reminder and persist to SD. Returns `true` on success. |
+| `reminder.remove(id)` | Remove by `id` and persist to SD. Returns `true` on success. |
+| `reminder.reload()` | Re-read `/reminders/pending.json` from SD. |
+
+**Clock face example** — show due reminder count as an alert:
+```js
+function draw() {
+  var due = reminder.due();
+  if (due > 0) {
+    display.print(20, 440, "! " + due + " reminder(s) due", 1);
+  }
+}
+```
+
+---
 
 ### `gc()`
 
@@ -307,8 +435,6 @@ shown at boot.
 | `stopwatch.js` | Start/stop/reset stopwatch with live per-second updates |
 | `countdown.js` | Countdown timer — set duration with LEFT/RIGHT, start/pause with CONFIRM, saves last duration |
 | `battery_monitor.js` | Live battery gauge — large percentage number and a proportional fill bar |
-| `weather.js` | OpenWeatherMap forecast — temperature, condition, humidity; auto-refreshes every 10 min |
-| `notifications.js` | Notification viewer — displays events from `/notifications/pending.json` |
 | `setup_server.js` | Web configuration portal — AP mode + browser UI to configure WiFi, display, and weather |
 
 ---
@@ -363,12 +489,21 @@ automatically on the next boot.
 
 ### Face API reference
 
+All global JS objects are available in face contexts.  Key ones for face authors:
+
 | Available API | Notes |
 |---------------|-------|
 | `display.*`   | All display functions — use `display.partialRefresh()` for updates |
 | `system.millis()` | Milliseconds since boot — derive H/M/S from this |
+| `system.time()` | Unix timestamp (requires `system.syncTime()` or `system.setTime()`) |
 | `system.battery()` | Battery 0–100 % |
 | `system.log(msg)` | Debug output to USB Serial |
+| `notify.*` | Notification cache — count, get, dismiss, reload |
+| `weather.*` | Cached OWM weather data — temp, humidity, condition, city |
+| `calendar.*` | Calendar event cache — count, get, upcoming, add, remove |
+| `reminder.*` | Reminder cache — count, get, due, dismiss, add, remove |
+| `wifi.*` | WiFi connection control |
+| `http.*` | HTTP GET (sync and async) |
 | `gc()` | Trigger garbage collector — call after allocating temporary strings |
 
 ### Lifecycle

@@ -12,6 +12,9 @@
 #include "mquickjs.h"
 #include <Arduino.h>
 #include <esp_sleep.h>
+#include <driver/gpio.h>
+#include <time.h>
+#include <sys/time.h>
 
 // Current app filename — set by app_loader before launching each app
 static char s_app_name[64] = "unknown";
@@ -35,6 +38,12 @@ uint32_t js_system_idle_timeout_ms() {
 
 uint32_t js_system_loop_sleep_ms() {
     return s_loop_sleep_ms;
+}
+
+uint32_t js_system_time_sec() {
+    time_t t = time(nullptr);
+    // Return 0 if the clock has never been set (epoch < year 2001 threshold)
+    return (t > 1000000000L) ? (uint32_t)t : 0;
 }
 
 extern "C" {
@@ -145,6 +154,50 @@ JSValue js_x4_system_log(JSContext *ctx, JSValue *this_val,
 JSValue js_x4_system_appName(JSContext *ctx, JSValue *this_val,
                               int argc, JSValue *argv) {
     return JS_NewString(ctx, s_app_name);
+}
+
+// system.time()  → int (Unix timestamp, seconds since 1970-01-01 UTC)
+// Returns 0 if the clock has not been set via system.setTime() or
+// system.syncTime().
+JSValue js_x4_system_time(JSContext *ctx, JSValue *this_val,
+                           int argc, JSValue *argv) {
+    return JS_NewUint32(ctx, js_system_time_sec());
+}
+
+// system.setTime(unix_ts)  — manually set the real-time clock
+// unix_ts: seconds since 1970-01-01 UTC (e.g. obtained from a time server)
+JSValue js_x4_system_setTime(JSContext *ctx, JSValue *this_val,
+                              int argc, JSValue *argv) {
+    if (argc < 1) return JS_ThrowTypeError(ctx, "system.setTime(unix_ts)");
+    double ts = 0.0;
+    if (JS_ToNumber(ctx, &ts, argv[0])) return JS_EXCEPTION;
+    struct timeval tv = { (time_t)(uint32_t)ts, 0 };
+    settimeofday(&tv, nullptr);
+    return JS_UNDEFINED;
+}
+
+// system.syncTime([tz_offset_hours])  → bool
+// Synchronise the RTC via NTP.  Requires WiFi to be connected.
+// tz_offset_hours: integer UTC offset (e.g. -5 for EST, 2 for CEST).
+// Blocks for up to 10 seconds waiting for NTP response.
+// Returns true on success.
+JSValue js_x4_system_syncTime(JSContext *ctx, JSValue *this_val,
+                               int argc, JSValue *argv) {
+    int tz = 0;
+    if (argc >= 1) JS_ToInt32(ctx, &tz, argv[0]);
+
+    long tz_offset_sec = (long)tz * 3600L;
+    configTime(tz_offset_sec, 0, "pool.ntp.org", "time.nist.gov");
+
+    uint32_t start = millis();
+    while (time(nullptr) < 1000000000L && millis() - start < 10000) {
+        delay(100);
+    }
+
+    bool ok = (time(nullptr) >= 1000000000L);
+    Serial.printf("[system] syncTime: %s (ts=%u)\n",
+                  ok ? "OK" : "failed", (unsigned)time(nullptr));
+    return JS_NewBool(ok ? 1 : 0);
 }
 
 } // extern "C"

@@ -16,3 +16,9 @@ uint32_t js_system_idle_timeout_ms();
 // Default is LOOP_SLEEP_MS (from x4_pins.h).  Can be changed by JS via
 // system.setRefreshInterval(ms).
 uint32_t js_system_loop_sleep_ms();
+
+// Returns the current Unix timestamp in seconds, as set via system.setTime()
+// or system.syncTime().  Returns 0 if the clock has not been synchronised
+// (i.e. time(nullptr) < 1 000 000 000, which predates year 2001).
+// Used by calendar.* and reminder.* to evaluate upcoming / due items.
+uint32_t js_system_time_sec();
