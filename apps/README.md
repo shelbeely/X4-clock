@@ -399,7 +399,7 @@ on every iteration and wear out the display faster.
 
 ---
 
-
+## Pre-compiling Apps to Bytecode
 
 Pre-compiling your script to mquickjs bytecode gives faster startup and
 slightly lower RAM usage at load time.
