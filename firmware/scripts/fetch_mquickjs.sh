@@ -63,6 +63,12 @@ cp mquickjs.h       "$LIB_SRC/"
 cp mquickjs_priv.h  "$LIB_SRC/"
 cp mquickjs_opcode.h "$LIB_SRC/"
 
+# Patch mquickjs.h: upstream omits <stddef.h> for size_t (required by newlib/esp32)
+sed -i 's|#include <inttypes.h>|#include <inttypes.h>\n#include <stddef.h>|' "$LIB_SRC/mquickjs.h"
+# Patch mquickjs.h: add extern "C" guards so C++ callers get C linkage
+sed -i 's|#define MQUICKJS_H|#define MQUICKJS_H\n\n#ifdef __cplusplus\nextern "C" {\n#endif|' "$LIB_SRC/mquickjs.h"
+sed -i 's|#endif /\* MQUICKJS_H \*/|#ifdef __cplusplus\n}\n#endif\n\n#endif /* MQUICKJS_H */|' "$LIB_SRC/mquickjs.h"
+
 # Utilities
 cp cutils.c  "$LIB_SRC/"
 cp cutils.h  "$LIB_SRC/"

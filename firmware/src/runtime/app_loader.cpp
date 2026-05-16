@@ -8,10 +8,14 @@
 #include "js_system.h"
 #include "drivers/display.h"
 #include "drivers/buttons.h"
+#include "drivers/battery.h"
 #include "drivers/sdcard.h"
 #include "builtin/clock_app.h"
+#include "bsp/x4_pins.h"
 
 #include <Arduino.h>
+#include <esp_sleep.h>
+#include <driver/gpio.h>
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -227,6 +231,18 @@ static void show_picker() {
 // File loading
 // ---------------------------------------------------------------------------
 
+// Graceful deep sleep from the app loader context
+static void graceful_deep_sleep_loader(const char *line1, const char *line2) {
+    display_clear();
+    if (line1) display_print(200, 200, line1, 3);
+    if (line2) display_print(240, 290, line2, 2);
+    display_refresh();
+    Serial.flush();
+    esp_deep_sleep_enable_gpio_wakeup(1ULL << PIN_BTN_POWER, ESP_GPIO_WAKEUP_GPIO_LOW);
+    esp_deep_sleep_start();
+    /* never reached */
+}
+
 static bool load_file_to_buf(const char *path, uint8_t **out_buf, size_t *out_len) {
     int32_t sz = sd_size(path);
     if (sz <= 0) return false;
@@ -311,15 +327,23 @@ static void launch_app(int idx) {
     // Call setup()
     js_engine_call_func(ctx, "setup");
 
+    // One-time light-sleep wakeup source: power button (GPIO3 LOW)
+    gpio_wakeup_enable((gpio_num_t)PIN_BTN_POWER, GPIO_INTR_LOW_LEVEL);
+    esp_sleep_enable_gpio_wakeup();
+
     // Main loop
-    uint32_t last_loop_start = millis();
+    uint32_t last_loop_start     = millis();
+    uint32_t last_interaction_ms = millis();   // for idle-sleep tracking
+
     for (;;) {
         // Dispatch button events to the registered input.onButton() callback.
         // Power button is dispatched here like any other button — if the JS
         // callback calls system.sleep(), esp_deep_sleep_start() is invoked
         // and this loop never resumes.  If no callback is registered the
         // event is consumed and we fall through to the legacy power check.
+        bool had_buttons = buttons_available();
         js_input_dispatch_events(ctx);
+        if (had_buttons) last_interaction_ms = millis();
 
         // Call loop()
         uint32_t now = millis();
@@ -334,6 +358,24 @@ static void launch_app(int idx) {
             break;
         }
 
+        // Low-battery protective shutdown (after each loop() call)
+        if (!battery_charging() && battery_percent() <= BAT_LOW_PCT) {
+            js_engine_destroy_context(ctx);
+            if (buf) { free(buf); }
+            graceful_deep_sleep_loader("Low Battery", "Sleeping...");
+            /* never reached */
+        }
+
+        // Auto-sleep on battery inactivity
+        uint32_t idle_ms = js_system_idle_timeout_ms();
+        if (!battery_charging() && idle_ms > 0 &&
+                (millis() - last_interaction_ms >= idle_ms)) {
+            js_engine_destroy_context(ctx);
+            if (buf) { free(buf); }
+            graceful_deep_sleep_loader("Idle timeout", "Sleeping...");
+            /* never reached */
+        }
+
         // Check for power-button long-press when no JS callback consumed it.
         // If the JS app registered input.onButton() and called system.sleep(),
         // esp_deep_sleep_start() already fired above.  This is a fallback for
@@ -344,7 +386,15 @@ static void launch_app(int idx) {
             // Put it back? No — just drop it (power = exit)
         }
 
-        vTaskDelay(pdMS_TO_TICKS(5));
+        // Sleep between loop() calls on battery to save power.
+        // 20 ms gives adequate responsiveness while cutting CPU duty cycle
+        // drastically vs the previous vTaskDelay(5).
+        if (!battery_charging()) {
+            esp_sleep_enable_timer_wakeup(20 * 1000ULL);
+            esp_light_sleep_start();
+        } else {
+            vTaskDelay(pdMS_TO_TICKS(5));
+        }
     }
 
     js_engine_destroy_context(ctx);

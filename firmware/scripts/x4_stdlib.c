@@ -336,6 +336,8 @@ static const JSPropDef x4_display_props[] = {
     JS_CFUNC_DEF("partialRefresh", 0, js_x4_display_partialRefresh),
     JS_CFUNC_DEF("width",          0, js_x4_display_width),
     JS_CFUNC_DEF("height",         0, js_x4_display_height),
+    JS_CFUNC_DEF("hibernate",      0, js_x4_display_hibernate),
+    JS_CFUNC_DEF("wake",           0, js_x4_display_wake),
     JS_PROP_END,
 };
 static const JSClassDef x4_display_obj = JS_OBJECT_DEF("display", x4_display_props);
@@ -363,11 +365,13 @@ static const JSClassDef x4_fs_obj = JS_OBJECT_DEF("fs", x4_fs_props);
 
 /* system.* */
 static const JSPropDef x4_system_props[] = {
-    JS_CFUNC_DEF("millis",  0, js_x4_system_millis),
-    JS_CFUNC_DEF("battery", 0, js_x4_system_battery),
-    JS_CFUNC_DEF("sleep",   1, js_x4_system_sleep),
-    JS_CFUNC_DEF("log",     1, js_x4_system_log),
-    JS_CFUNC_DEF("appName", 0, js_x4_system_appName),
+    JS_CFUNC_DEF("millis",           0, js_x4_system_millis),
+    JS_CFUNC_DEF("battery",          0, js_x4_system_battery),
+    JS_CFUNC_DEF("batteryLow",       0, js_x4_system_batteryLow),
+    JS_CFUNC_DEF("sleep",            1, js_x4_system_sleep),
+    JS_CFUNC_DEF("setIdleTimeout",   1, js_x4_system_setIdleTimeout),
+    JS_CFUNC_DEF("log",              1, js_x4_system_log),
+    JS_CFUNC_DEF("appName",          0, js_x4_system_appName),
     JS_PROP_END,
 };
 static const JSClassDef x4_system_obj = JS_OBJECT_DEF("system", x4_system_props);

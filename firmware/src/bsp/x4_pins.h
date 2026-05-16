@@ -50,10 +50,19 @@
 #define BAT_EMPTY_MV    3300
 #define BAT_CACHE_MS    30000   // re-read every 30 s
 
+// Protective deep-sleep threshold: enter sleep when battery ≤ this % and
+// not charging.  Prevents over-discharge of the Li-ion cell.
+#define BAT_LOW_PCT     5
+
 // ---------------------------------------------------------------------------
 // USB / charging detection
 // ---------------------------------------------------------------------------
 #define PIN_USB_DETECT  20  // HIGH when USB connected / charging
+
+// Define POWER_SAVE_USB to disable the USB CDC Serial port when running on
+// battery (no USB host detected 500 ms after boot).  Comment out to keep
+// Serial always active (useful during development).
+#define POWER_SAVE_USB  1
 
 // ---------------------------------------------------------------------------
 // Button — Row 1 (GPIO1 ADC): Right | Left | Confirm | Back
@@ -101,6 +110,14 @@
 
 #define BTN_DEBOUNCE_MS       50    // minimum press duration
 #define BTN_POWER_LONG_MS     1000  // long-press threshold → deep sleep
+
+// ---------------------------------------------------------------------------
+// Battery-powered inactivity auto-sleep
+// After this many ms without a button press, the device enters deep sleep when
+// running on battery.  Set to 0 to disable.  Can be overridden at runtime from
+// JS with system.setIdleTimeout(ms).
+// ---------------------------------------------------------------------------
+#define IDLE_SLEEP_MS   600000U  // 10 minutes
 
 // ---------------------------------------------------------------------------
 // Deep sleep wakeup (power button = GPIO3, active LOW)

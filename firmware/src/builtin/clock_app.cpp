@@ -12,10 +12,12 @@
 #include "drivers/sdcard.h"
 #include "runtime/js_engine.h"
 #include "runtime/js_input.h"
+#include "runtime/js_system.h"
 #include "bsp/x4_pins.h"
 
 #include <Arduino.h>
 #include <esp_sleep.h>
+#include <driver/gpio.h>
 #include <string.h>
 
 // ---------------------------------------------------------------------------
@@ -210,6 +212,22 @@ static void show_face_name(const char *name) {
 }
 
 // ---------------------------------------------------------------------------
+// Graceful deep sleep helper — shows a message, persists it on e-ink, sleeps
+// ---------------------------------------------------------------------------
+
+static void graceful_deep_sleep(const char *line1, const char *line2) {
+    unload_face();
+    display_clear();
+    if (line1) display_print(200, 200, line1, 3);
+    if (line2) display_print(240, 290, line2, 2);
+    display_refresh();   // full refresh so message persists on e-ink after power-off
+    Serial.flush();
+    esp_deep_sleep_enable_gpio_wakeup(1ULL << PIN_BTN_POWER, ESP_GPIO_WAKEUP_GPIO_LOW);
+    esp_deep_sleep_start();
+    /* never reached */
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -223,13 +241,23 @@ void clock_app_run() {
     scan_faces();
     load_face(s_face_idx);
 
-    uint32_t last_draw_ms = 0;
-    bool     force_draw   = true;
+    // Put the SD card to sleep after face loading — it won't be needed again
+    // until the user switches faces.
+    if (sdcard_available()) sdcard_sleep();
+
+    uint32_t last_draw_ms        = 0;
+    bool     force_draw          = true;
+    uint32_t last_interaction_ms = millis();  // for idle-sleep tracking
+
+    // One-time light-sleep wakeup source: power button (GPIO3 LOW).
+    // Timer wakeup is configured per-iteration below.
+    gpio_wakeup_enable((gpio_num_t)PIN_BTN_POWER, GPIO_INTR_LOW_LEVEL);
+    esp_sleep_enable_gpio_wakeup();
 
     for (;;) {
         uint32_t now = millis();
 
-        // Trigger draw() every DRAW_INTERVAL_MS (or immediately when forced)
+        // --- Trigger draw() every DRAW_INTERVAL_MS (or immediately when forced) ---
         if (force_draw || (now - last_draw_ms >= DRAW_INTERVAL_MS)) {
             force_draw   = false;
             last_draw_ms = now;
@@ -239,29 +267,48 @@ void clock_app_run() {
             } else if (s_face_ctx) {
                 js_engine_call_func(s_face_ctx, "draw");
             }
+
+            // Hibernate display on battery to minimise idle current.
+            // display_clear() / display_print() call display_wake() automatically
+            // before the next draw cycle.
+            if (!battery_charging()) {
+                display_hibernate();
+            }
+
+            // Low-battery protective shutdown (check after each draw cycle)
+            if (!battery_charging() && battery_percent() <= BAT_LOW_PCT) {
+                graceful_deep_sleep("Low Battery", "Sleeping...");
+                /* never reached */
+            }
         }
 
-        // Process one button event per loop iteration
+        // --- Process one button event per iteration ---
         ButtonEvent ev = buttons_dequeue();
 
         switch (ev) {
             case BTN_LEFT:
+                sdcard_wake();
                 s_face_idx = (s_face_idx == 0) ? (s_face_count - 1)
                                                : (s_face_idx - 1);
                 load_face(s_face_idx);
                 show_face_name(s_faces[s_face_idx].name);
+                if (sdcard_available()) sdcard_sleep();
                 delay(700);
                 force_draw   = true;
                 last_draw_ms = 0;
+                last_interaction_ms = millis();
                 break;
 
             case BTN_RIGHT:
+                sdcard_wake();
                 s_face_idx = (s_face_idx + 1) % s_face_count;
                 load_face(s_face_idx);
                 show_face_name(s_faces[s_face_idx].name);
+                if (sdcard_available()) sdcard_sleep();
                 delay(700);
                 force_draw   = true;
                 last_draw_ms = 0;
+                last_interaction_ms = millis();
                 break;
 
             case BTN_CONFIRM: {
@@ -269,22 +316,19 @@ void clock_app_run() {
                 snprintf(batStr, sizeof(batStr), "Batt: %d%%", battery_percent());
                 display_print(20, 450, batStr, 1);
                 display_partial_refresh();
+                if (!battery_charging()) display_hibernate();
+                last_interaction_ms = millis();
                 break;
             }
 
             case BTN_BACK:
                 // Return to app_loader → picker
                 unload_face();
+                if (sdcard_available()) sdcard_wake();
                 return;
 
             case BTN_POWER:
-                unload_face();
-                display_clear();
-                display_print(280, 220, "Sleeping...", 2);
-                display_partial_refresh();
-                delay(500);
-                esp_sleep_enable_ext0_wakeup((gpio_num_t)PIN_BTN_POWER, 0);
-                esp_deep_sleep_start();
+                graceful_deep_sleep("Sleeping...", nullptr);
                 /* never reached */
                 break;
 
@@ -292,6 +336,25 @@ void clock_app_run() {
                 break;
         }
 
-        delay(50);
+        // --- Auto-sleep on battery after inactivity ---
+        uint32_t idle_ms = js_system_idle_timeout_ms();
+        if (!battery_charging() && idle_ms > 0 &&
+                (millis() - last_interaction_ms >= idle_ms)) {
+            graceful_deep_sleep("Idle timeout", "Sleeping...");
+            /* never reached */
+        }
+
+        // --- Sleep until next draw deadline ---
+        bool on_battery = !battery_charging();
+        if (on_battery && !force_draw) {
+            uint32_t elapsed = millis() - last_draw_ms;
+            if (elapsed < DRAW_INTERVAL_MS) {
+                uint64_t sleep_us = (uint64_t)(DRAW_INTERVAL_MS - elapsed) * 1000ULL;
+                esp_sleep_enable_timer_wakeup(sleep_us);
+                esp_light_sleep_start();
+            }
+        } else {
+            delay(50);
+        }
     }
 }

@@ -11,6 +11,46 @@
 #include "js_system.h"
 #include <Arduino.h>
 
+// Forward declarations for all native binding functions referenced in x4_stdlib.h.
+// Each function is defined as extern "C" in its respective runtime source file.
+extern "C" {
+    // stdlib shims (defined below in this file)
+    extern JSCFunction js_gc;
+    extern JSCFunction js_print;
+    extern JSCFunction js_date_now;
+    extern JSCFunction js_performance_now;
+    // display.* bindings (js_display.cpp)
+    extern JSCFunction js_x4_display_clear;
+    extern JSCFunction js_x4_display_print;
+    extern JSCFunction js_x4_display_drawRect;
+    extern JSCFunction js_x4_display_drawBitmap;
+    extern JSCFunction js_x4_display_refresh;
+    extern JSCFunction js_x4_display_partialRefresh;
+    extern JSCFunction js_x4_display_width;
+    extern JSCFunction js_x4_display_height;
+    extern JSCFunction js_x4_display_hibernate;
+    extern JSCFunction js_x4_display_wake;
+    // input.* bindings (js_input.cpp)
+    extern JSCFunction js_x4_input_onButton;
+    // fs.* bindings (js_fs.cpp)
+    extern JSCFunction js_x4_fs_open;
+    extern JSCFunction js_x4_fs_read;
+    extern JSCFunction js_x4_fs_write;
+    extern JSCFunction js_x4_fs_close;
+    extern JSCFunction js_x4_fs_seek;
+    extern JSCFunction js_x4_fs_size;
+    extern JSCFunction js_x4_fs_list;
+    extern JSCFunction js_x4_fs_exists;
+    // system.* bindings (js_system.cpp)
+    extern JSCFunction js_x4_system_millis;
+    extern JSCFunction js_x4_system_battery;
+    extern JSCFunction js_x4_system_batteryLow;
+    extern JSCFunction js_x4_system_sleep;
+    extern JSCFunction js_x4_system_setIdleTimeout;
+    extern JSCFunction js_x4_system_log;
+    extern JSCFunction js_x4_system_appName;
+}
+
 // The generated stdlib header (produced by fetch_mquickjs.sh) — must be
 // included in exactly ONE translation unit so the function table is defined.
 // The extern "C" wrapper prevents C++ name-mangling of the table symbols.

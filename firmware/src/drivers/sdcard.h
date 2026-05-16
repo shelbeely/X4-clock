@@ -37,3 +37,9 @@ bool sd_exists(const char *path);
 int  sd_list_dir(const char *dir_path,
                  char names[][256], bool is_dir[], uint32_t sizes[],
                  int max_count);
+
+// --- Power management ---
+// Put the card into low-power sleep mode (SD CMD5).  The card is automatically
+// woken before the next file operation.  Call after a batch of SD accesses.
+void sdcard_sleep();
+void sdcard_wake();

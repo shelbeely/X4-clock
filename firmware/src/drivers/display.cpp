@@ -12,7 +12,7 @@
 #include "sdcard.h"
 
 #include <GxEPD2_BW.h>
-#include <GxEPD2_426_GDEQ0426T82.h>
+#include <gdeq/GxEPD2_426_GDEQ0426T82.h>
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <Fonts/FreeSansBold18pt7b.h>
 #include <Fonts/FreeSansBold24pt7b.h>
@@ -27,6 +27,9 @@ static GxEPD2_BW<GxEPD2_426_GDEQ0426T82, EPD_PAGE_ROWS> epd(
 
 // Tracks whether any drawing commands have been issued since the last refresh
 static bool _dirty = false;
+
+// Tracks whether the display is in low-power hibernate mode
+static bool _hibernated = false;
 
 // ---------------------------------------------------------------------------
 // Internal: choose font based on caller's size_factor (1–4)
@@ -50,10 +53,33 @@ void display_init(SPIClass &spi) {
     epd.setRotation(0);         // portrait: (0,0) = top-left
     epd.setTextColor(GxEPD_BLACK);
     epd.setTextWrap(false);
-    _dirty = false;
+    _dirty      = false;
+    _hibernated = false;
+}
+
+// ---------------------------------------------------------------------------
+// Power management
+// ---------------------------------------------------------------------------
+
+void display_hibernate() {
+    if (_hibernated) return;
+    epd.hibernate();    // SSD1677 deep sleep — draws only a few µA
+    _hibernated = true;
+}
+
+void display_wake() {
+    if (!_hibernated) return;
+    // Toggle RST and run the minimal init sequence to exit deep sleep.
+    // The 'false' initial flag skips slow one-time calibration steps.
+    epd.init(115200, false, 2, false);
+    epd.setRotation(0);
+    epd.setTextColor(GxEPD_BLACK);
+    epd.setTextWrap(false);
+    _hibernated = false;
 }
 
 void display_clear() {
+    display_wake();             // exit hibernate if needed
     epd.setFullWindow();
     epd.firstPage();
     do {
@@ -69,12 +95,13 @@ void display_refresh() {
 }
 
 void display_partial_refresh() {
-    epd.displayWindow(0, 0, EPD_WIDTH, EPD_HEIGHT, true);
+    epd.display(true);   // partial-update LUT (~0.42 s)
     _dirty = false;
 }
 
 void display_print(int16_t x, int16_t y, const char *text, uint8_t size_factor) {
     if (!text) return;
+    display_wake();             // exit hibernate if needed
     set_font(size_factor);
 
     epd.setPartialWindow(0, 0, EPD_WIDTH, EPD_HEIGHT);
@@ -90,6 +117,7 @@ void display_print(int16_t x, int16_t y, const char *text, uint8_t size_factor) 
 }
 
 void display_draw_rect(int16_t x, int16_t y, int16_t w, int16_t h, bool filled) {
+    display_wake();             // exit hibernate if needed
     epd.setPartialWindow(x, y, w, h);
     epd.firstPage();
     do {
@@ -114,6 +142,7 @@ void display_draw_rect(int16_t x, int16_t y, int16_t w, int16_t h, bool filled) 
  */
 void display_draw_bitmap(int16_t dx, int16_t dy, const char *sd_path) {
     if (!sdcard_available() || !sd_path) return;
+    display_wake();             // exit hibernate if needed
 
     int fh = sd_open(sd_path, 'r');
     if (fh < 0) return;

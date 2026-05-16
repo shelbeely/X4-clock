@@ -105,4 +105,20 @@ JSValue js_x4_display_height(JSContext *ctx, JSValue *this_val,
     return JS_NewInt32(ctx, display_height());
 }
 
+// display.hibernate() — put the SSD1677 into lowest-power standby
+JSValue js_x4_display_hibernate(JSContext *ctx, JSValue *this_val,
+                                  int argc, JSValue *argv) {
+    display_hibernate();
+    return JS_UNDEFINED;
+}
+
+// display.wake() — exit standby before issuing drawing commands
+JSValue js_x4_display_wake(JSContext *ctx, JSValue *this_val,
+                             int argc, JSValue *argv) {
+    display_wake();
+    return JS_UNDEFINED;
+}
+
 } // extern "C"
+
+// The closing brace above ends extern "C". The new bindings are added below.
