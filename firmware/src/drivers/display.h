@@ -30,3 +30,11 @@ void display_draw_bitmap(int16_t x, int16_t y, const char *sd_path);
 // Dimensions
 int16_t display_width();
 int16_t display_height();
+
+// Power management
+// display_hibernate() sends the SSD1677 into its lowest-power standby (few µA).
+// display_wake() exits standby; must be called before any drawing operation
+// after a hibernate.  display_clear() calls display_wake() automatically, so
+// callers that always start with display_clear() do not need explicit wake calls.
+void display_hibernate();
+void display_wake();

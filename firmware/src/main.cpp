@@ -24,6 +24,9 @@
 static SPIClass g_spi(FSPI);
 
 void setup() {
+    // --- CPU clock: 80 MHz is ample for SPI + JS and halves active current ---
+    setCpuFrequencyMhz(80);
+
     // --- Serial / USB CDC ---
     Serial.begin(115200);
     delay(500);   // brief wait for USB CDC to enumerate
@@ -36,6 +39,16 @@ void setup() {
     battery_init();
     buttons_init();
     display_init(g_spi);
+
+#ifdef POWER_SAVE_USB
+    // If running on battery with no USB host, disable CDC to save power.
+    // battery_init() must have run before this check.
+    if (!battery_charging()) {
+        Serial.println("[boot] on battery — disabling USB CDC to save power");
+        Serial.flush();
+        Serial.end();
+    }
+#endif
 
     Serial.print("[boot] SD card ... ");
     if (sdcard_init(g_spi)) {

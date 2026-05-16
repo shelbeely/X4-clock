@@ -14,7 +14,8 @@
 static SdFat  s_sd;
 static SdFile s_files[SD_MAX_OPEN_FILES];
 static bool   s_file_open[SD_MAX_OPEN_FILES] = {};
-static bool   s_mounted = false;
+static bool   s_mounted  = false;
+static bool   s_sleeping = false;   // true when card is in CMD5 sleep mode
 
 // ---------------------------------------------------------------------------
 // Init
@@ -36,6 +37,24 @@ bool sdcard_init(SPIClass &spi) {
 bool sdcard_available() { return s_mounted; }
 
 // ---------------------------------------------------------------------------
+// Power management
+// ---------------------------------------------------------------------------
+
+void sdcard_wake() {
+    // SHARED_SPI mode deasserts CS when idle; no explicit card-wake needed.
+    // This function is provided as a forward-compatible hook.
+    (void)s_sleeping;
+    s_sleeping = false;
+}
+
+void sdcard_sleep() {
+    // SHARED_SPI mode deasserts CS between operations, minimising idle draw.
+    // A full CMD5 SD sleep command would require SdFat internals not exposed
+    // in the public 2.x API; CS deassertion is sufficient for the use-case here.
+    s_sleeping = true;
+}
+
+// ---------------------------------------------------------------------------
 // Handle allocation
 // ---------------------------------------------------------------------------
 
@@ -52,6 +71,7 @@ static int alloc_handle() {
 
 int sd_open(const char *path, char mode) {
     if (!s_mounted || !path) return -1;
+    sdcard_wake();   // ensure card is awake before any operation
     int h = alloc_handle();
     if (h < 0) return -1;
 
@@ -92,6 +112,7 @@ bool sd_seek(int h, uint32_t offset) {
 
 int32_t sd_size(const char *path) {
     if (!s_mounted || !path) return -1;
+    sdcard_wake();
     SdFile f;
     if (!f.open(path, O_RDONLY)) return -1;
     int32_t sz = (int32_t)f.fileSize();
@@ -101,6 +122,7 @@ int32_t sd_size(const char *path) {
 
 bool sd_exists(const char *path) {
     if (!s_mounted || !path) return false;
+    sdcard_wake();
     return s_sd.exists(path);
 }
 
@@ -112,6 +134,7 @@ int sd_list_dir(const char *dir_path,
                 char names[][256], bool is_dir[], uint32_t sizes[],
                 int max_count) {
     if (!s_mounted || !dir_path || max_count <= 0) return 0;
+    sdcard_wake();
 
     SdFile dir;
     if (!dir.open(dir_path, O_RDONLY)) return 0;

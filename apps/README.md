@@ -56,6 +56,8 @@ input.onButton(function(btn) {
 | `display.partialRefresh()` | Partial refresh (~0.42 s, for frequent updates) |
 | `display.width()` | Returns 800 |
 | `display.height()` | Returns 480 |
+| `display.hibernate()` | Put SSD1677 into lowest-power standby (~µA). Call after `refresh()` / `partialRefresh()` when on battery. |
+| `display.wake()` | Wake display from standby. Automatically called before any drawing command. |
 
 ### `input.*`
 
@@ -84,7 +86,9 @@ Button names: `"right"`, `"left"`, `"confirm"`, `"back"`, `"volup"`, `"voldown"`
 |------|-------------|
 | `system.millis()` | Milliseconds since boot. |
 | `system.battery()` | Battery percentage 0–100. |
+| `system.batteryLow()` | Returns `true` when battery ≤ 5 % and not charging. Use to show a low-battery indicator in your face. |
 | `system.sleep(ms)` | Enter deep sleep. `ms=0` = wake only on power button. |
+| `system.setIdleTimeout(ms)` | Set auto-sleep idle timeout in ms (default 600 000 = 10 min). Pass `0` to disable. Only active when on battery. |
 | `system.log(msg)` | Print message to USB Serial (development). |
 | `system.appName()` | Filename of the running app. |
 

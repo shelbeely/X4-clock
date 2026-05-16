@@ -10,14 +10,13 @@
     "frameworks": ["arduino"],
     "platforms": ["espressif32"],
     "build": {
-        "srcFilter": ["+<src/*.c>"],
         "flags": [
-            "-x c",
             "-D_GNU_SOURCE",
             "-DCONFIG_SMALL=1",
             "-Wno-unused-parameter",
             "-Wno-missing-field-initializers"
         ],
+        "srcFilter": ["+<src/*.c>", "+<src/*.cpp>"],
         "includeDir": "src"
     }
 }
