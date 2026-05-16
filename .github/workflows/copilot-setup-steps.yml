@@ -1,0 +1,56 @@
+name: "Copilot Setup Steps"
+
+# Run automatically when this file changes (validates the setup) and allow
+# manual triggers from the Actions tab.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be called `copilot-setup-steps` or Copilot will not pick it up.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read   # needed to clone the repository
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Python / PlatformIO ────────────────────────────────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PlatformIO Core
+        run: pip install platformio
+
+      # PlatformIO downloads the espressif32 platform and toolchain on the
+      # first build.  Cache the entire .platformio directory so subsequent
+      # Copilot sessions don't re-download ~200 MB of toolchain files.
+      - name: Cache PlatformIO packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-espressif32-${{ hashFiles('firmware/platformio.ini') }}
+          restore-keys: |
+            pio-espressif32-
+
+      # ── mquickjs source + generated headers ───────────────────────────────
+      # fetch_mquickjs.sh requires: git (pre-installed), gcc (pre-installed),
+      # and network access to clone github.com/bellard/mquickjs.
+      - name: Fetch mquickjs and generate stdlib headers
+        run: bash firmware/scripts/fetch_mquickjs.sh
+
+      # ── Pre-fetch the PlatformIO toolchain ────────────────────────────────
+      # Run a dry build so the espressif32 toolchain and library dependencies
+      # (GxEPD2, SdFat) are downloaded and cached before Copilot starts work.
+      - name: Pre-fetch PlatformIO toolchain and libraries
+        run: cd firmware && pio run

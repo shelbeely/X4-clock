@@ -219,6 +219,11 @@ Uses [MicroQuickJS](https://github.com/bellard/mquickjs) by Fabrice Bellard.
 - 32-bit bytecode (`mqjs -m32`) for ESP32-C3 RISC-V
 - Apps can also be pre-compiled to `.app` bytecode for faster startup
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on adding new JS APIs,
+coding conventions, and the testing workflow.
+
 ## Reference Hardware Links
 
 - https://github.com/sunwoods/Xteink-X4
