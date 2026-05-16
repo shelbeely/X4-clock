@@ -193,7 +193,10 @@ function setup() {
   display.print(20, 440, "POWER: sleep", 1);
   display.partialRefresh();
 
-  system.setRefreshInterval(100);  // poll server frequently
+  system.setRefreshInterval(100);  // poll server every 100 ms; faster means
+                                    // more responsive HTTP serving but higher
+                                    // CPU/power use — acceptable here since
+                                    // setup_server is only run briefly.
 }
 
 // ---------------------------------------------------------------------------

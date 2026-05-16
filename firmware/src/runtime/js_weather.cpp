@@ -268,7 +268,8 @@ JSValue js_x4_weather_refresh(JSContext *ctx, JSValue *this_val,
                           new_tz, (float)new_tz / 3600.0f);
         }
         // Re-apply NTP with the correct timezone so system.time() returns
-        // local time after the next NTP sync.
+        // local time after the next NTP sync.  Using pool.ntp.org and
+        // time.nist.gov — reliable public servers suitable for global use.
         configTime((long)s_tz_offset_sec, 0, "pool.ntp.org", "time.nist.gov");
     }
 
