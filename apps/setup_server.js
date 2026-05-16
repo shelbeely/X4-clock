@@ -7,8 +7,10 @@
 //   - WiFi SSID and password (/config/wifi.json)
 //   - Screen rotation (0-3)
 //   - Loop refresh interval (ms)
-//   - Timezone UTC offset (hours)
-//   - OpenWeatherMap API key and city (/config/settings.json)
+//   - Location (city name) for weather + automatic timezone detection
+//   - OpenWeatherMap API key (/config/settings.json)
+//   - Fallback UTC offset (used until weather.refresh() provides the correct
+//     timezone from OpenWeatherMap's "timezone" field)
 //
 // After saving, the device reboots (deep-sleep / wake) with the new settings.
 //
@@ -32,6 +34,7 @@ var PAGE_HTML = '<!DOCTYPE html><html><head>' +
   '<style>body{font-family:sans-serif;max-width:480px;margin:20px auto;padding:0 16px}' +
   'h1{font-size:1.4em}label{display:block;margin-top:12px;font-weight:bold}' +
   'input{width:100%;padding:6px;box-sizing:border-box;font-size:1em;margin-top:4px}' +
+  '.hint{font-size:0.85em;color:#666;margin-top:2px}' +
   'button{margin-top:20px;padding:10px 24px;font-size:1em;background:#1a73e8;color:#fff;border:none;border-radius:4px;cursor:pointer}' +
   '#msg{margin-top:12px;color:green}</style></head><body>' +
   '<h1>&#9201; Xteink X4 Setup</h1><form id="f">' +
@@ -41,11 +44,16 @@ var PAGE_HTML = '<!DOCTYPE html><html><head>' +
   '<h2>Display</h2>' +
   '<label>Rotation (0=landscape 1=portrait 2=rev.landscape 3=rev.portrait)<input name="rotation" id="rotation" type="number" min="0" max="3" value="0"></label>' +
   '<label>Refresh interval (ms, default 20)<input name="refresh_ms" id="refresh_ms" type="number" min="1" max="60000" value="20"></label>' +
+  '<h2>Location &amp; Weather</h2>' +
+  '<label>City / Location' +
+  '<input name="city" id="city" value="London" placeholder="e.g. London, New York, Tokyo"></label>' +
+  '<p class="hint">Used for OpenWeatherMap weather data. The device will automatically ' +
+  'detect the correct timezone for this location after WiFi connects and weather refreshes.</p>' +
+  '<label>OpenWeatherMap API Key<input name="owm_key" id="owm_key"></label>' +
   '<h2>Time</h2>' +
-  '<label>Timezone UTC offset (hours, e.g. -5 or 2)<input name="tz_offset" id="tz_offset" type="number" min="-12" max="14" value="0"></label>' +
-  '<h2>Weather (OpenWeatherMap)</h2>' +
-  '<label>API Key<input name="owm_key" id="owm_key"></label>' +
-  '<label>City<input name="city" id="city" value="London"></label>' +
+  '<label>Fallback UTC offset (hours)<input name="tz_offset" id="tz_offset" type="number" min="-12" max="14" value="0"></label>' +
+  '<p class="hint">Used on first boot before weather data is fetched. Once weather.refresh() ' +
+  'succeeds the timezone is overridden with the precise offset from OpenWeatherMap.</p>' +
   '<br><button type="submit">Save &amp; Reboot</button>' +
   '</form><div id="msg"></div>' +
   '<script>' +
@@ -180,8 +188,8 @@ function setup() {
   display.print(20, 80,  "AP: X4-Setup", 2);
   display.print(20, 150, "Pass: configure", 1);
   display.print(20, 210, "Open: http://" + ip + "/", 2);
-  display.print(20, 310, "Configure WiFi, display,", 1);
-  display.print(20, 340, "weather, and timezone.", 1);
+  display.print(20, 310, "Set location, weather,", 1);
+  display.print(20, 340, "WiFi and display.", 1);
   display.print(20, 440, "POWER: sleep", 1);
   display.partialRefresh();
 

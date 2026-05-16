@@ -84,6 +84,9 @@ extern "C" {
     extern JSCFunction js_x4_weather_condition;
     extern JSCFunction js_x4_weather_city;
     extern JSCFunction js_x4_weather_age;
+    extern JSCFunction js_x4_weather_tz;
+    extern JSCFunction js_x4_weather_setLocation;
+    extern JSCFunction js_x4_weather_location;
     // calendar.* bindings (js_calendar.cpp)
     extern JSCFunction js_x4_calendar_count;
     extern JSCFunction js_x4_calendar_get;

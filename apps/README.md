@@ -209,6 +209,14 @@ Configure `owm_key` and `city` in `/config/settings.json` before calling
 | `weather.condition()` | Condition string, e.g. `"clear sky"`. |
 | `weather.city()` | City name returned by the API. |
 | `weather.age()` | Milliseconds since last `refresh()`, or `-1` if never refreshed. |
+| `weather.tz()` | UTC timezone offset in **seconds** as provided by the OWM response (e.g. `3600` = UTC+1). Returns the boot-time fallback from `settings.json` until the first successful `refresh()`. |
+| `weather.setLocation(city)` | Update the city, persist to `/config/settings.json`, and return `true` on success. Call `weather.refresh()` afterwards to apply the change. |
+| `weather.location()` | The currently configured city string (from `settings.json` or last `setLocation()` call). |
+
+> **Automatic timezone**: every successful `weather.refresh()` reads the `timezone` field from the OWM
+> response and calls `configTime()` with the correct UTC offset.  This means calling
+> `wifi.connect()` + `weather.refresh()` is sufficient to both get weather data **and** sync the
+> clock to the correct local time — no manual `tz_offset` configuration is required.
 
 **Clock face example** — refresh once in setup, show in draw:
 ```js

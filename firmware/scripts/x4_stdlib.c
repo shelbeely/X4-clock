@@ -425,13 +425,16 @@ static const JSClassDef x4_notify_obj = JS_OBJECT_DEF("notify", x4_notify_props)
 
 /* weather.* */
 static const JSPropDef x4_weather_props[] = {
-    JS_CFUNC_DEF("refresh",   0, js_x4_weather_refresh),
-    JS_CFUNC_DEF("valid",     0, js_x4_weather_valid),
-    JS_CFUNC_DEF("temp",      0, js_x4_weather_temp),
-    JS_CFUNC_DEF("humidity",  0, js_x4_weather_humidity),
-    JS_CFUNC_DEF("condition", 0, js_x4_weather_condition),
-    JS_CFUNC_DEF("city",      0, js_x4_weather_city),
-    JS_CFUNC_DEF("age",       0, js_x4_weather_age),
+    JS_CFUNC_DEF("refresh",     0, js_x4_weather_refresh),
+    JS_CFUNC_DEF("valid",       0, js_x4_weather_valid),
+    JS_CFUNC_DEF("temp",        0, js_x4_weather_temp),
+    JS_CFUNC_DEF("humidity",    0, js_x4_weather_humidity),
+    JS_CFUNC_DEF("condition",   0, js_x4_weather_condition),
+    JS_CFUNC_DEF("city",        0, js_x4_weather_city),
+    JS_CFUNC_DEF("age",         0, js_x4_weather_age),
+    JS_CFUNC_DEF("tz",          0, js_x4_weather_tz),
+    JS_CFUNC_DEF("setLocation", 1, js_x4_weather_setLocation),
+    JS_CFUNC_DEF("location",    0, js_x4_weather_location),
     JS_PROP_END,
 };
 static const JSClassDef x4_weather_obj = JS_OBJECT_DEF("weather", x4_weather_props);

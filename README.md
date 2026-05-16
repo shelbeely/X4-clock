@@ -205,7 +205,7 @@ SD:/
 | `http` | `get(url)`, `getAsync(url, cb)` |
 | `server` | `begin(port)`, `stop()`, `onRequest(path, fn)`, `send(code, type, body)`, `handleClient()` |
 | `notify` | `count()`, `get(idx)`, `dismiss(idx)`, `reload()` |
-| `weather` | `refresh()`, `valid()`, `temp()`, `humidity()`, `condition()`, `city()`, `age()` |
+| `weather` | `refresh()`, `valid()`, `temp()`, `humidity()`, `condition()`, `city()`, `age()`, `tz()`, `setLocation(city)`, `location()` |
 | `calendar` | `count()`, `get(idx)`, `upcoming()`, `add(title,start,end,desc)`, `remove(id)`, `reload()` |
 | `reminder` | `count()`, `get(idx)`, `due()`, `dismiss(id)`, `add(title,time,body,recur)`, `remove(id)`, `reload()` |
 | global | `gc()` |
