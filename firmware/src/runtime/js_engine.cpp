@@ -155,12 +155,6 @@ JSValue js_performance_now(JSContext *ctx, JSValue *this_val, int argc,
     return JS_NewInt64(ctx, (int64_t)millis());
 }
 
-// Date constructor stub — mquickjs needs this even if full Date isn't used
-JSValue js_date_constructor(JSContext *ctx, JSValue *this_val, int argc,
-                            JSValue *argv) {
-    return JS_NewInt64(ctx, (int64_t)millis());
-}
-
 } // extern "C"
 
 // ---------------------------------------------------------------------------
