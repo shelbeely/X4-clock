@@ -108,7 +108,7 @@ function drawWeather(json) {
   display.print(20, 60, heading, 2);
 
   // Large temperature
-  var tempStr = Math.round(temp) + " C";
+  var tempStr = Math.round(temp) + "\u00b0C";
   display.print(80, 160, tempStr, 4);
 
   // Condition description

@@ -151,10 +151,9 @@ function setup() {
       return;
     }
 
-    // Write wifi.json
+    // Write wifi.json — use JSON.stringify to safely escape values
     if (data.ssid !== undefined && data.ssid !== "") {
-      var wj = '{"ssid":"' + sanitize(data.ssid) +
-               '","pass":"' + sanitize(data.pass || "") + '"}';
+      var wj = JSON.stringify({ ssid: "" + data.ssid, pass: "" + (data.pass || "") });
       ensureDir("/config");
       var wh = fs.open("/config/wifi.json", "w");
       if (wh >= 0) { fs.write(wh, wj); fs.close(wh); }
@@ -165,8 +164,8 @@ function setup() {
       rotation:   parseInt(data.rotation   || 0),
       refresh_ms: parseInt(data.refresh_ms || 20),
       tz_offset:  parseInt(data.tz_offset  || 0),
-      owm_key:    sanitize(data.owm_key || ""),
-      city:       sanitize(data.city    || "London")
+      owm_key:    "" + (data.owm_key || ""),
+      city:       "" + (data.city    || "London")
     });
     ensureDir("/config");
     var sh = fs.open("/config/settings.json", "w");
@@ -204,11 +203,6 @@ function loop() {
 function ensureDir(path) {
   // No mkdir in fs API; directory must already exist.
   // The user is expected to create /config on the SD card.
-}
-
-function sanitize(s) {
-  // Remove characters that could break JSON string escaping
-  return ("" + s).replace(/["\\]/g, "");
 }
 
 function extractString(text, key) {

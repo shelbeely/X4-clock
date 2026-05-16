@@ -28,6 +28,9 @@
 
 #define HTTP_MAX_BODY_BYTES   4096
 #define HTTP_TIMEOUT_MS       10000
+#define HTTP_TASK_STACK_SIZE  8192
+#define ASYNC_CLEANUP_TIMEOUT_MS   500
+#define ASYNC_CLEANUP_POLL_MS       10
 
 // ---------------------------------------------------------------------------
 // Async request state (shared between the FreeRTOS task and the main thread)
@@ -159,7 +162,7 @@ JSValue js_x4_http_getAsync(JSContext *ctx, JSValue *this_val,
     s_async_code   = -1;
     s_async_body[0] = '\0';
 
-    xTaskCreate(http_fetch_task, "http_get", 8192, nullptr, 1, &s_async_task_handle);
+    xTaskCreate(http_fetch_task, "http_get", HTTP_TASK_STACK_SIZE, nullptr, 1, &s_async_task_handle);
 
     return JS_UNDEFINED;
 }
@@ -206,11 +209,11 @@ void js_http_poll(JSContext *ctx) {
 }
 
 void js_http_reset() {
-    // If a task is running, wait for it to finish (up to 500 ms)
+    // If a task is running, wait for it to finish (up to ASYNC_CLEANUP_TIMEOUT_MS)
     if (s_async_task_handle) {
-        uint32_t deadline = millis() + 500;
+        uint32_t deadline = millis() + ASYNC_CLEANUP_TIMEOUT_MS;
         while (s_async_task_handle && millis() < deadline) {
-            vTaskDelay(pdMS_TO_TICKS(10));
+            vTaskDelay(pdMS_TO_TICKS(ASYNC_CLEANUP_POLL_MS));
         }
     }
     s_async_active  = false;

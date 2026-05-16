@@ -22,14 +22,15 @@ JSValue js_x4_wifi_connect(JSContext *ctx, JSValue *this_val,
                             int argc, JSValue *argv) {
     if (argc < 1) return JS_ThrowTypeError(ctx, "wifi.connect(ssid[, pass])");
 
-    JSCStringBuf sbuf, pbuf;
+    JSCStringBuf sbuf;
     const char *ssid = JS_ToCString(ctx, argv[0], &sbuf);
     if (!ssid) return JS_EXCEPTION;
 
     const char *pass = "";
+    JSCStringBuf pbuf;
     if (argc >= 2) {
         pass = JS_ToCString(ctx, argv[1], &pbuf);
-        if (!pass) pass = "";
+        if (!pass) return JS_EXCEPTION;
     }
 
     bool ok = wifi_connect(ssid, pass);
@@ -41,14 +42,15 @@ JSValue js_x4_wifi_startAP(JSContext *ctx, JSValue *this_val,
                             int argc, JSValue *argv) {
     if (argc < 1) return JS_ThrowTypeError(ctx, "wifi.startAP(ssid[, pass])");
 
-    JSCStringBuf sbuf, pbuf;
+    JSCStringBuf sbuf;
     const char *ssid = JS_ToCString(ctx, argv[0], &sbuf);
     if (!ssid) return JS_EXCEPTION;
 
     const char *pass = "";
+    JSCStringBuf pbuf;
     if (argc >= 2) {
         pass = JS_ToCString(ctx, argv[1], &pbuf);
-        if (!pass) pass = "";
+        if (!pass) return JS_EXCEPTION;
     }
 
     bool ok = wifi_start_ap(ssid, pass);
