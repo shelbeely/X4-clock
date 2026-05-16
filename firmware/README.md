@@ -1,6 +1,6 @@
 # Xteink X4 — Firmware
 
-Base firmware for the Xteink X4 "Pebble Watch" device.
+Base firmware for the Xteink X4 e-ink smartwatch.
 
 ## Hardware Summary
 
@@ -121,15 +121,23 @@ firmware/
     ├── drivers/
     │   ├── display.cpp/h    # GxEPD2 page-mode wrapper
     │   ├── buttons.cpp/h    # ADC ladder + power button + debounce
-    │   ├── battery.cpp/h    # Battery % from ADC
-    │   └── sdcard.cpp/h     # SdFat init + file helpers
+    │   ├── battery.cpp/h       # Battery % from ADC
+    │   ├── sdcard.cpp/h        # SdFat init + file helpers
+    │   └── wifi_manager.cpp/h  # WiFi station / AP + event callbacks
     ├── runtime/
-    │   ├── js_engine.cpp/h  # mquickjs context lifecycle
-    │   ├── js_display.cpp/h # JS: display.* bindings
-    │   ├── js_input.cpp/h   # JS: input.onButton() event queue
-    │   ├── js_fs.cpp/h      # JS: fs.*  bindings
-    │   ├── js_system.cpp/h  # JS: system.* bindings + gc()
-    │   └── app_loader.cpp/h # SD scan, .js/.app loader, lifecycle
+    │   ├── js_engine.cpp/h      # mquickjs context lifecycle
+    │   ├── js_display.cpp/h     # JS: display.* bindings
+    │   ├── js_input.cpp/h       # JS: input.onButton() event queue
+    │   ├── js_fs.cpp/h          # JS: fs.* bindings
+    │   ├── js_system.cpp/h      # JS: system.* bindings + gc()
+    │   ├── js_wifi.cpp          # JS: wifi.* bindings
+    │   ├── js_http_client.cpp/h # JS: http.get / http.getAsync()
+    │   ├── js_http_server.cpp   # JS: server.* bindings
+    │   ├── js_notify.cpp/h      # JS: notify.* bindings
+    │   ├── js_weather.cpp/h     # JS: weather.* bindings
+    │   ├── js_calendar.cpp/h    # JS: calendar.* bindings
+    │   ├── js_reminder.cpp/h    # JS: reminder.* bindings
+    │   └── app_loader.cpp/h     # SD scan, .js/.app loader, lifecycle
     ├── builtin/
     │   ├── clock_app.h      # Built-in clock app public API
     │   └── clock_app.cpp    # Built-in clock app + face loader

@@ -1,6 +1,6 @@
 # X4-clock — Xteink X4 Base Firmware
 
-Full base firmware for the **Xteink X4** "Pebble Watch" device.
+Full base firmware for the **Xteink X4** e-ink smartwatch.
 Drop a JavaScript app on the SD card and it runs — no recompiling the firmware needed.
 
 ## What's in this Repository
@@ -13,6 +13,7 @@ Drop a JavaScript app on the SD card and it runs — no recompiling the firmware
 │   ├── stopwatch.js          ← start/stop/reset stopwatch
 │   ├── countdown.js          ← countdown timer with persistent settings
 │   ├── battery_monitor.js    ← live battery gauge with bar graph
+│   ├── setup_server.js       ← browser-based WiFi & display setup portal
 │   ├── faces/
 │   │   ├── digital.js        ← JS mirror of the built-in digital face
 │   │   ├── minimal.js        ← time only, no decoration
@@ -197,7 +198,7 @@ SD:/
 
 | Object | Methods |
 |--------|---------|
-| `display` | `clear()`, `print(x,y,text,size)`, `drawRect()`, `drawBitmap()`, `refresh()`, `partialRefresh()`, `width()`, `height()`, `setRotation(r)`, `rotation()` |
+| `display` | `clear()`, `print(x,y,text,size)`, `drawRect()`, `drawBitmap()`, `refresh()`, `partialRefresh()`, `width()`, `height()`, `setRotation(r)`, `rotation()`, `hibernate()`, `wake()` |
 | `input` | `onButton(fn)` |
 | `fs` | `open()`, `read()`, `write()`, `close()`, `seek()`, `size()`, `list()`, `exists()` |
 | `system` | `millis()`, `battery()`, `batteryLow()`, `sleep(ms)`, `lightSleep(ms)`, `setIdleTimeout(ms)`, `setRefreshInterval(ms)`, `log(msg)`, `appName()`, `time()`, `setTime(ts)`, `syncTime([tz])` |
