@@ -1,3 +1,6 @@
 build/
 dist/
 .DS_Store
+firmware/.pio/
+.vscode/
+firmware/lib/mquickjs/src/x4_stdlib.h
